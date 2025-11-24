@@ -40,6 +40,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
   joystick/joystick_ros2.py
+  joystick/inputs.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -56,3 +56,9 @@ log/
 
 # Freecad
 *.FCBak
+
+# Virtual environments
+*venv/
+
+# VSCode
+.vscode/

@@ -29,83 +29,172 @@
 
 #ifndef USB_CAM__USB_CAM_HPP_
 #define USB_CAM__USB_CAM_HPP_
-#include "usb_cam/usb_cam_utils.hpp"
 
-#include <asm/types.h>          /* for videodev2.h */
-
-extern "C"
-{
-#include <linux/videodev2.h>
+extern "C" {
 #include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-#include <libavutil/mem.h>
+#include <linux/videodev2.h>
 }
 
-// legacy reasons
-#include <libavcodec/version.h>
-#if LIBAVCODEC_VERSION_MAJOR < 55
-#define AV_CODEC_ID_MJPEG CODEC_ID_MJPEG
-#endif
-
-#include <builtin_interfaces/msg/time.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp/time.hpp>
-// #include <sensor_msgs/msg/image.h>
+#include <chrono>
+#include <memory>
+#include <algorithm>
+#include <sstream>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <sstream>
+
+#include "usb_cam/utils.hpp"
+#include "usb_cam/formats/pixel_format_base.hpp"
+#include "usb_cam/formats/av_pixel_format_helper.hpp"
+
+#include "usb_cam/formats/mjpeg.hpp"
+#include "usb_cam/formats/mono.hpp"
+#include "usb_cam/formats/rgb.hpp"
+#include "usb_cam/formats/uyvy.hpp"
+#include "usb_cam/formats/yuyv.hpp"
+#include "usb_cam/formats/m420.hpp"
+
 
 namespace usb_cam
 {
 
+using usb_cam::utils::io_method_t;
+using usb_cam::formats::pixel_format_base;
+
+/// @brief Add more formats here and to driver_supported_formats below as
+/// they are added to this library
+using usb_cam::formats::RGB8;
+using usb_cam::formats::YUYV;
+using usb_cam::formats::YUYV2RGB;
+using usb_cam::formats::UYVY;
+using usb_cam::formats::UYVY2RGB;
+using usb_cam::formats::MONO8;
+using usb_cam::formats::MONO16;
+using usb_cam::formats::Y102MONO8;
+using usb_cam::formats::RAW_MJPEG;
+using usb_cam::formats::MJPEG2RGB;
+using usb_cam::formats::M4202RGB;
+
+
+/// @brief list all supported formats that this driver supports
+std::vector<std::shared_ptr<pixel_format_base>> driver_supported_formats(
+  const formats::format_arguments_t & args = formats::format_arguments_t())
+{
+  std::vector<std::shared_ptr<pixel_format_base>> fmts = {
+    std::make_shared<RGB8>(args),
+    std::make_shared<YUYV>(args),
+    std::make_shared<YUYV2RGB>(args),
+    std::make_shared<UYVY>(args),
+    std::make_shared<UYVY2RGB>(args),
+    std::make_shared<MONO8>(args),
+    std::make_shared<MONO16>(args),
+    std::make_shared<Y102MONO8>(args),
+    std::make_shared<RAW_MJPEG>(args),
+    std::make_shared<MJPEG2RGB>(args),
+    std::make_shared<M4202RGB>(args),
+  };
+  return fmts;
+}
+
+typedef struct
+{
+  struct v4l2_fmtdesc format;
+  struct v4l2_frmivalenum v4l2_fmt;
+} capture_format_t;
+
+typedef struct
+{
+  std::string camera_name;  // can be anything
+  std::string device_name;  // usually /dev/video0 or something similiar
+  std::string frame_id;
+  std::string io_method_name;
+  std::string camera_info_url;
+  // these parameters all have to be a combination supported by the device
+  // Use
+  // v4l2-ctl --device=0 --list-formats-ext
+  // to discover them,
+  // or guvcview
+  std::string pixel_format_name;
+  std::string av_device_format;
+  int image_width;
+  int image_height;
+  int framerate;
+  int brightness;
+  int contrast;
+  int saturation;
+  int sharpness;
+  int gain;
+  int white_balance;
+  int exposure;
+  int focus;
+  bool auto_white_balance;
+  bool autoexposure;
+  bool autofocus;
+} parameters_t;
+
+typedef struct
+{
+  char * data;
+  size_t width;
+  size_t height;
+  std::shared_ptr<pixel_format_base> pixel_format;
+  size_t number_of_pixels;
+  size_t bytes_per_line;
+  size_t size_in_bytes;
+  v4l2_format v4l2_fmt;
+  struct timespec stamp;
+
+  size_t set_number_of_pixels()
+  {
+    number_of_pixels = width * height;
+    return number_of_pixels;
+  }
+  size_t set_bytes_per_line()
+  {
+    bytes_per_line = width * pixel_format->byte_depth() * pixel_format->channels();
+    return bytes_per_line;
+  }
+  size_t set_size_in_bytes()
+  {
+    size_in_bytes = height * bytes_per_line;
+    return size_in_bytes;
+  }
+
+  /// @brief make it a shorter API call to get the pixel format
+  unsigned int get_format_fourcc()
+  {
+    return pixel_format->v4l2();
+  }
+} image_t;
 
 class UsbCam
 {
 public:
-  typedef enum
-  {
-    IO_METHOD_READ,
-    IO_METHOD_MMAP,
-    IO_METHOD_USERPTR,
-    IO_METHOD_UNKNOWN,
-  } io_method;
-
-  typedef enum
-  {
-    PIXEL_FORMAT_YUYV,
-    PIXEL_FORMAT_UYVY,
-    PIXEL_FORMAT_MJPEG,
-    PIXEL_FORMAT_YUVMONO10,
-    PIXEL_FORMAT_RGB24,
-    PIXEL_FORMAT_GREY,
-    PIXEL_FORMAT_H264,
-    PIXEL_FORMAT_UNKNOWN
-  } pixel_format;
-
-  typedef enum
-  {
-    COLOR_FORMAT_YUV420P, 
-    COLOR_FORMAT_YUV422P, 
-    COLOR_FORMAT_UNKNOWN,
-  } color_format;
-
   UsbCam();
   ~UsbCam();
 
-  // start camera
-  bool start(
-    const std::string & dev, io_method io, pixel_format pf, color_format cf,
-    uint32_t image_width, uint32_t image_height, int framerate);
-  // shutdown camera
-  bool shutdown(void);
+  /// @brief Configure device, should be called before start
+  void configure(parameters_t & parameters, const io_method_t & io_method);
 
-  // grabs a new image from the camera
-  // bool get_image(sensor_msgs::msg::Image:::SharedPtr image);
-  bool get_image(
-    builtin_interfaces::msg::Time & stamp, std::string & encoding,
-    uint32_t & height, uint32_t & width, uint32_t & step, std::vector<uint8_t> & data);
+  /// @brief Start the configured device
+  void start();
 
-  void get_formats();  // std::vector<usb_cam::msg::Format>& formats);
+  /// @brief shutdown camera
+  void shutdown(void);
+
+  /// @brief Take a new image with device and return it
+  ///   To copy the returned image to another format:
+  ///   sensor_msgs::msg::Image image_msg;
+  ///   auto new_image = get_image();
+  ///   image_msg.data.resize(step * height);
+  ///   memcpy(&image_msg.data[0], new_image->frame.base, image_msg.data.size());
+  char * get_image();
+
+  /// @brief Overload of get_image to allow users to pass
+  /// in an image pointer to fill in
+  void get_image(char * destination);
+
+  std::vector<capture_format_t> get_supported_formats();
 
   // enables/disable auto focus
   bool set_auto_focus(int value);
@@ -114,68 +203,215 @@ public:
   bool set_v4l_parameter(const std::string & param, int value);
   bool set_v4l_parameter(const std::string & param, const std::string & value);
 
-  static io_method io_method_from_string(const std::string & str);
-  static pixel_format pixel_format_from_string(const std::string & str);
-  static color_format color_format_from_string(const std::string& str);
+  void stop_capturing();
+  void start_capturing();
 
-  bool stop_capturing(void);
-  bool start_capturing(void);
-  bool is_capturing();
+  inline size_t get_image_width()
+  {
+    return m_image.width;
+  }
+
+  inline size_t get_image_height()
+  {
+    return m_image.height;
+  }
+
+  inline size_t get_image_size_in_bytes()
+  {
+    return m_image.size_in_bytes;
+  }
+
+  inline size_t get_image_size_in_pixels()
+  {
+    return m_image.number_of_pixels;
+  }
+
+  inline timespec get_image_timestamp()
+  {
+    return m_image.stamp;
+  }
+
+  /// @brief Get number of bytes per line in image
+  /// @return number of bytes per line in image
+  inline unsigned int get_image_step()
+  {
+    return m_image.bytes_per_line;
+  }
+
+  inline std::string get_device_name()
+  {
+    return m_device_name;
+  }
+
+  inline std::shared_ptr<pixel_format_base> get_pixel_format()
+  {
+    return m_image.pixel_format;
+  }
+
+  inline usb_cam::utils::io_method_t get_io_method()
+  {
+    return m_io;
+  }
+
+  inline int get_fd()
+  {
+    return m_fd;
+  }
+
+  inline std::shared_ptr<usb_cam::utils::buffer[]> get_buffers()
+  {
+    return m_buffers;
+  }
+
+  inline unsigned int number_of_buffers()
+  {
+    return m_number_of_buffers;
+  }
+
+  inline AVCodec * get_avcodec()
+  {
+    return m_avcodec;
+  }
+
+  inline AVDictionary * get_avoptions()
+  {
+    return m_avoptions;
+  }
+
+  inline AVCodecContext * get_avcodec_context()
+  {
+    return m_avcodec_context;
+  }
+
+  inline AVFrame * get_avframe()
+  {
+    return m_avframe;
+  }
+
+  inline bool is_capturing()
+  {
+    return m_is_capturing;
+  }
+
+  inline time_t get_epoch_time_shift_us()
+  {
+    return m_epoch_time_shift_us;
+  }
+
+  inline std::vector<capture_format_t> supported_formats()
+  {
+    if (m_supported_formats.size() == 0) {
+      this->get_supported_formats();
+    }
+
+    return m_supported_formats;
+  }
+
+  /// @brief Check if the given format is supported by this device
+  /// If it is supported, set the m_pixel_format variable to it.
+  /// @param format the format to check if it is supported
+  /// @return bool true if the given format is supported, false otherwise
+  inline bool set_pixel_format(const formats::format_arguments_t & args)
+  {
+    bool result = false;
+
+    std::shared_ptr<pixel_format_base> found_driver_format = nullptr;
+
+    // First check if given format is supported by this driver
+    for (auto driver_fmt : driver_supported_formats(args)) {
+      if (driver_fmt->name() == args.name) {
+        found_driver_format = driver_fmt;
+      }
+    }
+
+    if (found_driver_format == nullptr) {
+      // List the supported formats of this driver for the user before throwing
+      std::cerr << "This driver supports the following formats:" << std::endl;
+      for (auto driver_fmt : driver_supported_formats(args)) {
+        std::cerr << "\t" << driver_fmt->name() << std::endl;
+      }
+      throw std::invalid_argument(
+              "Specified format `" + args.name + "` is unsupported by this ROS driver"
+      );
+    }
+
+    std::cout << "This device supports the following formats:" << std::endl;
+    for (auto fmt : this->supported_formats()) {
+      // Always list the devices supported formats for the user
+      std::cout << "\t" << fmt.format.description << " ";
+      std::cout << fmt.v4l2_fmt.width << " x " << fmt.v4l2_fmt.height << " (";
+      std::cout << fmt.v4l2_fmt.discrete.denominator / fmt.v4l2_fmt.discrete.numerator << " Hz)";
+      std::cout << std::endl;
+
+      if (fmt.v4l2_fmt.pixel_format == found_driver_format->v4l2()) {
+        result = true;
+        m_image.pixel_format = found_driver_format;
+      }
+    }
+
+    return result;
+  }
+
+  /// @brief Set pixel format from parameter list. Required to have logic within UsbCam object
+  /// in case pixel format class requires additional information for conversion function
+  /// (e.g. number of pixels, width, height, etc.)
+  /// @param parameters list of parameters from which the pixel format is to be set
+  /// @return pixel format structure corresponding to a given name
+  inline std::shared_ptr<pixel_format_base> set_pixel_format(const parameters_t & parameters)
+  {
+    // create format arguments structure
+    formats::format_arguments_t format_args({
+        parameters.pixel_format_name,
+        parameters.image_width,
+        parameters.image_height,
+        m_image.number_of_pixels,
+        parameters.av_device_format,
+      });
+
+    // Look for specified pixel format
+    if (!this->set_pixel_format(format_args)) {
+      throw std::invalid_argument(
+              "Specified format `" + parameters.pixel_format_name + "` is unsupported by the " +
+              "selected device `" + parameters.device_name + "`"
+      );
+    }
+
+    return m_image.pixel_format;
+  }
 
 private:
-  // TODO(lucasw) just store an Image shared_ptr here
-  typedef struct
-  {
-    uint32_t width;
-    uint32_t height;
-    int bytes_per_pixel;
-    int image_size;
-    builtin_interfaces::msg::Time stamp;
-    char * image;
-    int is_new;
-  } camera_image_t;
+  void init_read();
+  void init_mmap();
+  void init_userp();
+  void init_device();
 
-  struct buffer
-  {
-    void * start;
-    size_t length;
-  };
+  void open_device();
+  void grab_image();
+  void read_frame();
+  void process_image(const char * src, char * & dest, const int & bytes_used);
 
+  void uninit_device();
+  void close_device();
 
-  int init_decoder(int image_width, int image_height, color_format color_format, 
-    AVCodecID codec_id, const char *codec_name);
-  int init_h264_decoder(int image_width, int image_height, color_format cf);
-  int init_mjpeg_decoder(int image_width, int image_height, color_format cf);
-  bool mjpeg2rgb(char * MJPEG, int len, char * RGB, int NumPixels);
-  bool process_image(const void * src, int len, camera_image_t * dest);
-  bool read_frame();
-  bool uninit_device(void);
-  bool init_read(unsigned int buffer_size);
-  bool init_mmap(void);
-  bool init_userp(unsigned int buffer_size);
-  bool init_device(uint32_t image_width, uint32_t image_height, int framerate);
-  bool close_device(void);
-  bool open_device(void);
-  bool grab_image();
+  std::string m_device_name;
+  usb_cam::utils::io_method_t m_io;
+  int m_fd;
+  unsigned int m_number_of_buffers;
+  std::shared_ptr<usb_cam::utils::buffer[]> m_buffers;
+  image_t m_image;
 
-  rclcpp::Clock::SharedPtr clock_;
-  std::string camera_dev_;
-  unsigned int pixelformat_;
-  bool monochrome_;
-  io_method io_;
-  int fd_;
-  buffer * buffers_;
-  unsigned int n_buffers_;
-  AVFrame * avframe_camera_;
-  AVFrame * avframe_rgb_;
-  AVCodec * avcodec_;
-  AVDictionary * avoptions_;
-  AVCodecContext * avcodec_context_;
-  int avframe_camera_size_;
-  int avframe_rgb_size_;
-  struct SwsContext * video_sws_;
-  camera_image_t * image_;
-  bool is_capturing_;
+  AVFrame * m_avframe;
+  int m_avframe_size;
+  AVCodec * m_avcodec;
+  AVCodecID m_codec_id;
+  AVDictionary * m_avoptions;
+  AVCodecContext * m_avcodec_context;
+
+  int64_t m_buffer_time_us;
+  bool m_is_capturing;
+  int m_framerate;
+  const time_t m_epoch_time_shift_us;
+  std::vector<capture_format_t> m_supported_formats;
 };
 
 }  // namespace usb_cam
