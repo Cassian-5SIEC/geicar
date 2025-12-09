@@ -3,7 +3,7 @@ apriltag_ros:
     # setup (defaults)
     image_transport: raw  # image format: "raw" or "compressed"
     family: 36h11         # tag family name: 16h5, 25h9, 36h11
-    size: 0.088             # default tag edge size in meter
+    size: 0.173             # default tag edge size in meter
     profile: true        # print profiling information to stdout
 
     # tuning of detection (defaults)
