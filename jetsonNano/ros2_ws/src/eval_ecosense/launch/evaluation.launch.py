@@ -14,7 +14,7 @@ def generate_launch_description():
     # --- Declare Nodes ---
     apriltag_node_left = Node(
         package='apriltag_ros',
-        executable='apriltag_node_left',
+        executable='apriltag_node',
         name='apriltag_node_left',
         output='screen',
         parameters=[
@@ -28,7 +28,7 @@ def generate_launch_description():
     )
     apriltag_node_right = Node(
         package='apriltag_ros',
-        executable='apriltag_node_right',
+        executable='apriltag_node',
         name='apriltag_node_right',
         output='screen',
         parameters=[
