@@ -2,20 +2,33 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration, Command
 from launch.conditions import UnlessCondition # Use IfCondition for "enable" flags
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     ld = LaunchDescription()
 
     pkg_share = get_package_share_directory('geicar_start_jetson')
 
+    urdf_model_path = os.path.join(
+        get_package_share_directory('ecosense_description'),
+        'src',
+        'description',
+        'ecosense_description.urdf'
+    )
+
     # --- Declare Launch Arguments ---
     # We create a "disable" argument for each node. 
     # By default, they are 'false' (meaning the node IS launched).
     # Setting disable_camera:=true will skip launching the camera.
-
+    disable_robot_state_publisher_arg = DeclareLaunchArgument(
+        'disable_robot_state_publisher',
+        default_value='false',
+        description='Disable the robot state publisher node'
+    )
+    
     declare_disable_lidar_arg = DeclareLaunchArgument(
         'disable_lidar',
         default_value='false',
@@ -58,13 +71,23 @@ def generate_launch_description():
     # UnlessCondition(LaunchConfiguration('disable_camera')) means:
     # "Launch this node UNLESS the 'disable_camera' argument is 'true'."
 
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
+        parameters=[{'robot_description': Command(['xacro ', str(urdf_model_path)])}, 
+                    {'use_sim_time': LaunchConfiguration('use_sim_time')}],
+        condition=UnlessCondition(LaunchConfiguration('disable_robot_state_publisher'))
+    )
+
     lidar_node = Node(
             package='rplidar_ros',
             executable='rplidar_node',
             name='rplidar_node',
             parameters=[{'channel_type':'serial',
                          'serial_port': '/dev/ttyUSB0',
-                         'serial_baudrate': '256000',
+                         'serial_baudrate': 256000,
                          'frame_id': 'rplidar_link',
                          'inverted': False,
                          'angle_compensate': True,
@@ -79,7 +102,7 @@ def generate_launch_description():
     camera_node_1 = Node(
         package="usb_cam",
         executable="usb_cam_node_exe",
-        namespace="usb_cam__right",
+        namespace="usb_cam_right",
         parameters=[{os.path.join(usb_cam_share, 'config', 'params_right.yaml')},
                     {'use_sim_time': LaunchConfiguration('use_sim_time')}],
         emulate_tty=True,
@@ -89,7 +112,7 @@ def generate_launch_description():
     camera_node_2 = Node(
         package="usb_cam",
         executable="usb_cam_node_exe",
-        namespace="usb_cam__left",
+        namespace="usb_cam_left",
         parameters=[{os.path.join(usb_cam_share, 'config', 'params_left.yaml')},
                     {'use_sim_time': LaunchConfiguration('use_sim_time')}],
         emulate_tty=True,
@@ -109,7 +132,8 @@ def generate_launch_description():
         package="network_hmi",
         executable="bridge_node",
         emulate_tty=True,
-        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time'),
+                     'image_topic': '/usb_cam_left/image_raw/compressed'}],
         condition=UnlessCondition(LaunchConfiguration('disable_bridge'))
     )
 
@@ -142,9 +166,22 @@ def generate_launch_description():
                     {'use_sim_time': LaunchConfiguration('use_sim_time')}]
     )
 
+    slam_toolbox_launch_file = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('slam_toolbox'),
+                'launch',
+                'online_async_launch.py')),
+        launch_arguments={
+            'slam_params_file': os.path.join(pkg_share, 'config', 'slam_params.yaml'),
+            'use_sim_time': LaunchConfiguration('use_sim_time')
+        }.items(),
+    )
+
     # --- Add Actions to Launch Description ---
 
     # Add the argument declarations
+    ld.add_action(disable_robot_state_publisher_arg)
     ld.add_action(declare_disable_lidar_arg)
     ld.add_action(declare_disable_lio_arg)
     ld.add_action(declare_disable_camera_arg)
@@ -153,6 +190,7 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_arg)
 
     # Add the nodes (they will only be executed if their condition is met)
+    ld.add_action(robot_state_publisher_node)
     ld.add_action(lidar_node)
     ld.add_action(camera_node_1)
     ld.add_action(camera_node_2)
@@ -160,5 +198,6 @@ def generate_launch_description():
     ld.add_action(bridge_node)
     ld.add_action(rf2o_laser_odometry_node)
     #ld.add_action(robot_localization_node)
+    #ld.add_action(slam_toolbox_launch_file)
 
     return ld

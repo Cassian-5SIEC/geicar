@@ -15,12 +15,6 @@
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>tf2_ros_py</exec_depend>
-  <exec_depend>csv</exec_depend>
-  <exec_depend>os</exec_depend>
-  <exec_depend>datetime</exec_depend>
-  <exec_depend>threading</exec_depend>
-  <exec_depend>sys</exec_depend>
-  <exec_depend>math</exec_depend>
   <exec_depend>apriltag_ros</exec_depend>
 
 

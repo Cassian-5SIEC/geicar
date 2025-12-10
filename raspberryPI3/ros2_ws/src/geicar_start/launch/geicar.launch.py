@@ -9,12 +9,12 @@ from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
-    urdf_model_path = os.path.join(
-        get_package_share_directory('geicar_description'),
-        'src',
-        'description',
-        'geicar_description.urdf'
-    )
+    # urdf_model_path = os.path.join(
+    #     get_package_share_directory('geicar_description'),
+    #     'src',
+    #     'description',
+    #     'geicar_description.urdf'
+    # )
 
     # --- Declare Launch Arguments ---
 
@@ -58,15 +58,15 @@ def generate_launch_description():
     
     ld = LaunchDescription()
 
-    robot_state_publisher_node = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        output='screen',
-        parameters=[{'robot_description': Command(['xacro ', str(urdf_model_path)])}, 
-                    {'use_sim_time': LaunchConfiguration('use_sim_time')}],
-        condition=UnlessCondition(LaunchConfiguration('disable_robot_state_publisher'))
-    )
+    # robot_state_publisher_node = Node(
+    #     package='robot_state_publisher',
+    #     executable='robot_state_publisher',
+    #     name='robot_state_publisher',
+    #     output='screen',
+    #     parameters=[{'robot_description': Command(['xacro ', str(urdf_model_path)])}, 
+    #                 {'use_sim_time': LaunchConfiguration('use_sim_time')}],
+    #     condition=UnlessCondition(LaunchConfiguration('disable_robot_state_publisher'))
+    # )
 
     joystick_node = Node(
         package="joystick",

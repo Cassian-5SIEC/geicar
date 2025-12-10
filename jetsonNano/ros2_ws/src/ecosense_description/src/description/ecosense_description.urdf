@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
-<robot name="geicar" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="ecosense" xmlns:xacro="http://ros.org/wiki/xacro">
 
-    <xacro:include filename="$(find geicar_description)/src/description/geicar_constant.urdf"/>
+    <xacro:include filename="$(find ecosense_description)/src/description/ecosense_constant.urdf"/>
 
     <!-- Robot Base -->
     <link name="base_link">
+        <visual>
+            <origin xyz="0.0 0.0 ${wheel_radius}" rpy="0.0 0.0 0.0"/>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}"/>
+            </geometry>
+            <material name='mohammed'>
+                <color rgba="0.25 0.25 0.25 1.0"/>
+            </material>
+        </visual>
     </link>
 
     <!-- Robot Footprint -->
     <link name="base_footprint">
-    <visual>
-      <origin xyz="0.0 0.0 ${base_height}" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <box size="${base_length} ${base_width} ${base_height}"/>
-      </geometry>
-      <material name='mohammed'>
-        <color rgba="0.25 0.25 0.25 1.0"/>
-      </material>
-    </visual>
     </link>
 
     <joint name="base_joint" type="fixed">

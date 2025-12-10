@@ -86,7 +86,7 @@ void CLaserOdometry2D::init(const sensor_msgs::msg::LaserScan& scan,
 
   // Get the initial laser pose assuming laser is fixed with respect the base_link
   laser_pose_    = robot_initial_pose * laser_pose_on_robot_;
-  laser_oldpose_ = laser_oldpose_;
+  // laser_oldpose_ = laser_oldpose_;
 
 
   // Init rf2o module (internal)

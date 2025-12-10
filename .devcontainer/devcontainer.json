@@ -1,7 +1,7 @@
 // Based on ROS2 Documentation page.
 // https://docs.ros.org/en/jazzy/How-To-Guides/Setup-ROS-2-with-VSCode-and-Docker-Container.html
 {
-    "name": "RPi ROS 2 Development Container",
+    "name": "ROS 2 Development Container",
     "privileged": true,
     "remoteUser": "${localEnv:USER}",
     "build": {
@@ -17,25 +17,33 @@
             "extensions":[
                 "mhutchie.git-graph",
                 "ms-python.vscode-python-envs",
+                "ms-python.python",
                 "ms-vscode.cpptools",
                 "ms-vscode.cpptools-extension-pack"
-            ]
+            ],
+            "settings": {
+                "python.analysis.extraPaths": [
+                    "/opt/ros/humble/lib/python3.10/site-packages"
+                ],
+                "C_Cpp.default.includePath": [
+                    "/opt/ros/humble/include/**"
+                ]
+            }
         }
     },
     "containerEnv": {
         "DISPLAY": "unix:0",
-        "ROS_DOMAIN_ID": "16"
+        "ROS_DOMAIN_ID": "3"
     },
     "runArgs": [
         "--net=host",
         "--pid=host",
         "--ipc=host",
         "-e", "DISPLAY=${env:DISPLAY}",
-        "--name", "ros2-jazzy-dev"
+        "--name", "ros2-humble-dev"
     ],
     "mounts": [
        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached"
     ],
-    "postCreateCommand": "sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) ${localWorkspaceFolder}"
 }
