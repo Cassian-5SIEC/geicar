@@ -212,9 +212,9 @@
     <link name="camera_right_link">
     </link>
     <joint name="camera_right_joint" type="fixed">
-        <parent link="base_link"/>
+        <parent link="camera_left_link"/>
         <child link="camera_right_link"/>
-        <origin xyz="${camera_right_xoff} ${camera_right_yoff} ${camera_right_zoff}" rpy="0 0 0"/>
+        <origin xyz="${camera_right_xoff} ${camera_right_yoff} ${camera_right_zoff}" rpy="${camera_right_rotx} ${camera_right_roty} ${camera_right_rotz}"/>
     </joint>
 
 </robot>
