@@ -11,8 +11,8 @@ class DualImageSaver(Node):
         super().__init__('dual_image_saver')
 
         # 1. Declare Parameters (allows changing topics/path via command line)
-        self.declare_parameter('image_topic_1', '/usb_cam_0/image_raw')
-        self.declare_parameter('image_topic_2', '/usb_cam_1/image_raw')
+        self.declare_parameter('image_topic_1', '/usb_cam_left/image_raw')
+        self.declare_parameter('image_topic_2', '/usb_cam_right/image_raw')
         self.declare_parameter('save_directory', './captured_images')
         self.declare_parameter('image_encoding', 'bgr8')
 
