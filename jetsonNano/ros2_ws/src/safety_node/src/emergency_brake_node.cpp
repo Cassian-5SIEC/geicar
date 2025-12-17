@@ -1,14 +1,15 @@
 #include "rclcpp/rclcpp.hpp"
 // Messages d'interfaces
-// #include <interfaces/msg/Control.hpp> 
-#include <interfaces/msg/Ultrasonic.hpp>
+#include <interfaces/msg/control.hpp> 
+#include "interfaces/msg/ultrasonic.hpp"
+#include "interfaces/msg/emergency_stop_request.hpp"
 // Messages standard ROS
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp" // Pour le point transformé
 // Outils de transformation NÉCESSAIRES
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp> // Permet tf_buffer_.transform()
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp" // Permet tf_buffer_.transform()
 
 #include <functional> 
 #include <cmath> 

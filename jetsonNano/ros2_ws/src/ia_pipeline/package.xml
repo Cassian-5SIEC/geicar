@@ -7,7 +7,7 @@
   <maintainer email="chourret.thomas@gmail.com">thomas</maintainer>
   <license>TODO: License declaration</license>
 
-  <depend>rlcpy</depend>
+  <depend>rclpy</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
