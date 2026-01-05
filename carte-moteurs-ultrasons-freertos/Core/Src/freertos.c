@@ -58,7 +58,7 @@ const osThreadAttr_t unusedTask_attributes = {
   .cb_size = sizeof(unusedTaskControlBlock),
   .stack_mem = &unusedTaskBuffer[0],
   .stack_size = sizeof(unusedTaskBuffer),
-  .priority = (osPriority_t) osPriorityLow7,
+  .priority = (osPriority_t) osPriorityLow,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -148,9 +148,11 @@ __weak void StartUnusedTask(void *argument)
 {
   /* USER CODE BEGIN StartUnusedTask */
   /* Infinite loop */
+
   for(;;)
   {
-    osDelay(1);
+	  // Infinite wait, disables the task without deleting it
+    vTaskDelay(portMAX_DELAY);
   }
   /* USER CODE END StartUnusedTask */
 }
