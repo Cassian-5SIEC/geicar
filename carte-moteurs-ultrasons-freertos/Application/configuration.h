@@ -40,8 +40,8 @@
 #define PERIOD_CAR_CONTROL_LOOP 30 		// Period in ms for car control loop
 										// (30 ms is, because, at max speed, speed sensors update at 25-30 ms
                                         // No need to be faster
-//#define 	 	100		// Period in ms to send motors data (speed and odometers)
 #define MOTOR_TIMER_PERIOD_MS 	100		// Period in ms to send motors data (speed and odometers)
+//#define MOTOR_TIMER_PERIOD_MS 	1000		// Period in ms to send motors data (speed and odometers)
 #define BATTERY_TIMER_PERIOD_MS	2000 	// Period in ms to send battery level
 #define DEBUG_LOOP_PERIOD_MS	1000	// Debug loop period in ms
 
@@ -64,12 +64,12 @@
 #define APPLOOP_QUEUE_ITEM_SIZE sizeof(void*)   // Chaque élément est un pointeur
 
 // Tasks stack sizes
-#define APPLOOP_TASK_STACK_SIZE 	256   	// en mots de 32 bits
+#define APPLOOP_TASK_STACK_SIZE 	196   	// en mots de 32 bits
 #define DEBUGLOOP_TASK_STACK_SIZE 	256 	// en mots de 32 bits. Besoin de pas mal d'espace pour la fonction sprintf
-#define USLOOP_TASK_STACK_SIZE  	128 	// en mots de 32 bits. Pas besoin d'une stack enorme
-#define CONTROLLOOP_TASK_STACK_SIZE 256 	// en mots de 32 bits. A revoir plus tard mais dans le doute, si on fait pas mal de calcul, prevoir de la place.
-#define CALIBRATION_TASK_STACK_SIZE 128 	// en mots de 32 bits. Pas besoin d'une stack enorme
-#define CAN_COMMUNICATION_TASK_STACK_SIZE 	128 	// en mots de 32 bits. Pas besoin d'une stack enorme
+#define USLOOP_TASK_STACK_SIZE  	196 	// en mots de 32 bits. Pas besoin d'une stack enorme
+#define CONTROLLOOP_TASK_STACK_SIZE 196 	// en mots de 32 bits. A revoir plus tard mais dans le doute, si on fait pas mal de calcul, prevoir de la place.
+#define CALIBRATION_TASK_STACK_SIZE 196 	// en mots de 32 bits. Pas besoin d'une stack enorme
+#define CAN_COMMUNICATION_TASK_STACK_SIZE 	196 	// en mots de 32 bits. Pas besoin d'une stack enorme
 
 // Tasks priorities
 #define CAN_COMMUNICATION_TASK_PRIORITY    	(tskIDLE_PRIORITY + 6) // Highest priority, no blocking function inside

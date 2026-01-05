@@ -30,6 +30,7 @@
 #include "calibrate.h"
 #include "can_communication.h"
 #include "measures.h"
+#include "i2c_cassian.h"
 
 #include "tasks.h"
 
@@ -98,6 +99,10 @@ void APP_Init(void) {
 	// Tasks
 	TASKS_Init();
 
+	// I2C
+	I2C_init() ;
+
+
 	/* Steering Initialization*/
 	// Write default calibration values in flash memory (first use only)
 	if ((int)Flash_Read_NUM(STEERING_CALIBRATION_A_DEFAULT_ADDR)!=(int)STEERING_CALIBRATION_A_DEFAULT
@@ -110,9 +115,9 @@ void APP_Init(void) {
 		Flash_Write_NUM(STEERING_CALIBRATION_B_ADDR, STEERING_CALIBRATION_B_DEFAULT);
 	}
 
-	printf("Motor - steering - ultrasonic sensors.\r\n");
-	printf("Application version: %s\r\n\n", APP_VERSION);
-	printf("Application started\r\n");
+//	printf("Motor - steering - ultrasonic sensors.\r\n");
+	//printf("Application version: %s\r\n\n", APP_VERSION);
+	//printf("Application started\r\n");
 }
 
 /**

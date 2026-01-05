@@ -204,7 +204,7 @@ void TASKS_Init(void) {
 
 	/* Création de la tâche CalibrationEvent (statiquement) */
 	xCalibrationTaskHandle = xTaskCreateStatic(TASKS_CalibrationEvent, // fonction de la tâche
-			"CalibrationEvent",             // nom (debug)
+			"CalibrationTask",             // nom (debug)
 			CALIBRATION_TASK_STACK_SIZE,   // taille pile (en mots de 32 bits)
 			NULL,                  // paramètre d’entrée
 			CALIBRATION_TASK_PRIORITY,     // priorité
@@ -219,7 +219,7 @@ void TASKS_Init(void) {
 
 	/* Création de la tâche CANCommunicationEvent (statiquement) */
 	xCANCommunicationTaskHandle = xTaskCreateStatic(TASKS_CANCommunicationEvent, // fonction de la tâche
-			"CalibrationEvent",             // nom (debug)
+			"CanComTask",             // nom (debug)
 			CAN_COMMUNICATION_TASK_STACK_SIZE,   // taille pile (en mots de 32 bits)
 			NULL,                  // paramètre d’entrée
 			CAN_COMMUNICATION_TASK_PRIORITY,     // priorité
