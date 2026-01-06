@@ -19,6 +19,7 @@
 #include "wheels.h"
 #include "measures.h"
 #include "can_communication.h"
+#include "i2c_cassian.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -119,6 +120,13 @@ static TimerHandle_t xMotorTimer   = NULL;
 static void BatteryTimerCallback(TimerHandle_t xTimer);
 static StaticTimer_t xBatteryTimerBuffer;
 static TimerHandle_t xBatteryTimer   = NULL;
+
+/* -------------------------------------------------------------------------
+ * Déclaration du timer pour l'envoi de la mesure de la batterie par l'INA
+ * ------------------------------------------------------------------------- */
+static void INABatteryTimerCallback(TimerHandle_t xTimer);
+static StaticTimer_t xINABatteryTimerBuffer;
+static TimerHandle_t xINABatteryTimer   = NULL;
 
 /*
  * @brief  Initialize tasks, queues, semaphores and timers.
@@ -268,6 +276,17 @@ void TASKS_Init(void) {
 	);
 	configASSERT(xBatteryTimer != NULL);
 
+	/* INA timer batterie */
+		xINABatteryTimer = xTimerCreateStatic(
+				"INABatteryTimer",
+				pdMS_TO_TICKS(BATTERY_TIMER_PERIOD_MS),
+				pdTRUE,
+				(void*)0,
+				INABatteryTimerCallback,
+				&xINABatteryTimerBuffer
+		);
+		configASSERT(xINABatteryTimer != NULL);
+
 	if (xTimerStart(xMotorTimer, 0) != pdPASS) {
 		// Erreur : pas de mémoire statique ?
 		Error_Handler();
@@ -277,6 +296,11 @@ void TASKS_Init(void) {
 		// Erreur : pas de mémoire statique ?
 		Error_Handler();
 	}
+
+	if (xTimerStart(xINABatteryTimer, 0) != pdPASS) {
+			// Erreur : pas de mémoire statique ?
+			Error_Handler();
+		}
 }
 
 /**
@@ -431,4 +455,20 @@ static void BatteryTimerCallback(TimerHandle_t xTimer) {
 	MEASURES_SendBatteryLevel();
 }
 
+static uint8_t * data = NULL;
+/**
+ * @brief  Callback function for the battery timer.
+ * This function is called when the battery timer expires.
+ * It performs sending battery measurements.
+ */
+static void INABatteryTimerCallback(TimerHandle_t xTimer) {
+	/* read current value*/
+	I2C_Read_Current(ADDR_BATTERY, data ) ;
+	// printf("%hhn",data) ;
+	I2C_Read_Voltage(ADDR_BATTERY, data ) ;
+	// printf("%hhn",data) ;
+	I2C_Read_Power(ADDR_BATTERY, data ) ;
+	// printf("%hhn",data) ;
+
+}
 

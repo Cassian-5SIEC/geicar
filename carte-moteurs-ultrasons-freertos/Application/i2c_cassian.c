@@ -44,26 +44,32 @@ void I2C_Init_Battery_Reg(){
 	//reseting the parameter of the INA
 	uint16_t data_rst = (1<<15); //reset value of the INA237
 	HAL_I2C_Mem_Write(&hi2c1,((ADDR_BATTERY<<1)),REG_CONFIG,I2C_MEMADD_SIZE_8BIT,(uint8_t *)&data_rst,I2C_DATA_SIZE, (TickType_t) I2C_TIMEOUT ) ;
+	vTaskDelay(pdMS_TO_TICKS(100));
 
 	//modifying the parameter of the INA's ADC
 	uint16_t data_adc_config =(0xB<<12) ; //selecting to read only current and voltage value (and not the temperature)
 	HAL_I2C_Mem_Write(&hi2c1,((ADDR_BATTERY<<1)),REG_ADC_CONFIG,I2C_MEMADD_SIZE_8BIT,(uint8_t *)&data_adc_config,I2C_DATA_SIZE, (TickType_t) I2C_TIMEOUT ) ;
+	vTaskDelay(pdMS_TO_TICKS(100));
 
 	//conversion constant value that will be used to have the current calculation
 	uint16_t data_shunt_cal =  0xBB8 ;
 	HAL_I2C_Mem_Write(&hi2c1,((ADDR_BATTERY<<1)),REG_SHUNT_CAL,I2C_MEMADD_SIZE_8BIT,(uint8_t *)&data_shunt_cal,I2C_DATA_SIZE, (TickType_t) I2C_TIMEOUT ) ;
+	vTaskDelay(pdMS_TO_TICKS(100));
 
 	//modifying the overcurrent threshold
 	uint16_t data_sovl = 0x5DC0 ; //(10*0,12/(0,000005))
 	HAL_I2C_Mem_Write(&hi2c1,((ADDR_BATTERY<<1)),REG_SOVL,I2C_MEMADD_SIZE_8BIT,(uint8_t *)&data_sovl,I2C_DATA_SIZE, (TickType_t) I2C_TIMEOUT ) ;
+	vTaskDelay(pdMS_TO_TICKS(100));
 
 	//modifying the overvoltage threshold
 	uint16_t data_bovl = 0x1040 ; //(13V/3,125mV)
 	HAL_I2C_Mem_Write(&hi2c1,((ADDR_BATTERY<<1)),REG_BOVL,I2C_MEMADD_SIZE_8BIT,(uint8_t *)&data_bovl,I2C_DATA_SIZE , (TickType_t) I2C_TIMEOUT) ;
+	vTaskDelay(pdMS_TO_TICKS(100));
 
 	//modifying the undervolatge threshold
 	uint16_t data_buvl = 0xDC0 ; //(11V/3,125mV)
 	HAL_I2C_Mem_Write(&hi2c1,((ADDR_BATTERY<<1)),REG_BUVL,I2C_MEMADD_SIZE_8BIT,(uint8_t *)&data_buvl,I2C_DATA_SIZE , (TickType_t) I2C_TIMEOUT) ;
+	vTaskDelay(pdMS_TO_TICKS(100));
 
 }
 /**
