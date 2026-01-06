@@ -35,7 +35,7 @@ public:
         this->declare_parameter("L_OFFSET_FRONT", 0.83);   
         this->declare_parameter("L_OFFSET_REAR", -0.66);  
         this->declare_parameter("W_ROBOT", 0.523);        
-        this->declare_parameter("LIDAR_FRAME_ID", "laser"); 
+        this->declare_parameter("LIDAR_FRAME_ID", "rplidar_link"); 
 
         // 1. DÉFINITION DU PUBLISHER
         stop_request_publisher_ = this->create_publisher<interfaces::msg::EmergencyStopRequest>(
