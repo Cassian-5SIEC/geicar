@@ -138,17 +138,23 @@ void VehicleController::cmd_vel_callback(const geometry_msgs::msg::Twist ::Share
   //velocity
   
   //changed manually
+  if(msg->linear.x >0){
+    velocity_= msg->linear.x + min_velocity_;
+  }else {
+    velocity_= msg->linear.x - min_velocity_;
+  }
    if (msg->linear.x  > max_velocity_) {
     velocity_ = max_velocity_;
   } else if (msg->linear.x  < -max_velocity_) {
     velocity_ = -max_velocity_;
-  }else if (msg->linear.x  < min_velocity_ && msg->linear.x >0 ) {
-    velocity_ = min_velocity_ + msg->linear.x;
-  } else if (msg->linear.x  > -min_velocity_ && msg->linear.x <0) {
-    velocity_ = -min_velocity_ + msg->linear.x;
-  } else {
-    velocity_ = msg->linear.x ;
   }
+  // }else if (msg->linear.x  < min_velocity_ && msg->linear.x >0 ) {
+  //   velocity_ = min_velocity_ + msg->linear.x;
+  // } else if (msg->linear.x  > -min_velocity_ && msg->linear.x <0) {
+  //   velocity_ = -min_velocity_ + msg->linear.x;
+  // } else {
+  //   velocity_ = msg->linear.x ;
+  // }
    const auto wheel_velocity{rear_differential_velocity()};
 
   // Convert wheel linear velocity to wheel angular velocity
