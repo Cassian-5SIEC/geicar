@@ -143,12 +143,12 @@ private:
             // 3. TRANSFORMATION vers /base_link (le Frame de décision)
             geometry_msgs::msg::PointStamped point_in_base_link;
             try {
-                tf_buffer_.transform(point_in_lidar, point_in_base_link, TARGET_FRAME);
+                point_in_base_link = tf_buffer_.transform(point_in_lidar, TARGET_FRAME);
             } catch (const tf2::TransformException &ex) {
                 RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000, 
                                      "TF Exception: Could not transform point from %s to %s. Check static_transform_publisher.",
                                      point_in_lidar.header.frame_id.c_str(), TARGET_FRAME.c_str());
-                continue; 
+                return; 
             }
 
             // 4. LOGIQUE DE FREINAGE BIDIRECTIONNELLE
@@ -214,7 +214,7 @@ private:
         
         // Affichage pour le débogage
         if (full_stop_required) {
-            RCLCPP_WARN(this->get_logger(), "FUSION STOP (Limit: %.2f m): Lidar: %s, US: %s.", 
+            RCLCPP_WARN(this->get_logger(), "EMERGENCY STOP (Limit: %.2f m): Lidar: %s, US: %s.", 
                         current_safety_distance_m_, 
                         lidar_threat_detected_ ? "TRUE" : "FALSE", 
                         us_threat_detected_ ? "TRUE" : "FALSE");
