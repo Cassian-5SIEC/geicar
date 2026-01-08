@@ -12,6 +12,9 @@ find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(interfaces REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -108,6 +111,9 @@ ament_target_dependencies(network_hmi_lib
   rclcpp
   interfaces
   nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
   sensor_msgs
   cv_bridge
 )

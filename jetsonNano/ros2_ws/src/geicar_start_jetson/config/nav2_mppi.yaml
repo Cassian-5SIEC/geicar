@@ -1,30 +1,39 @@
 controller_server:
   ros__parameters:
     use_sim_time: False
-    controller_frequency: 20.0
-    progress_checker_plugin: "progress_checker"
-    goal_checker_plugin: "goal_checker"
     controller_plugins: ["FollowPath"]
 
-    progress_checker:
-      plugin: "nav2_controller::SimpleProgressChecker"
-    goal_checker:
-      plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25
-      yaw_goal_tolerance: 0.25
-
     FollowPath:
-      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_velocity: 0.5
-      lookahead_dist: 0.6
-      min_lookahead_dist: 0.3
-      max_lookahead_dist: 0.9
-      lookahead_time: 1.5
-      rotate_to_heading_angular_vel: 0.0 
-      use_velocity_scaled_lookahead_dist: true
-      min_approach_linear_velocity: 0.05
-      use_approach_linear_velocity_scaling: true
+      plugin: "nav2_mppi_controller::MPPIController"
+      motion_model: "Ackermann"
+      ackermann_constraints:
+        min_turning_r: 1.55
+      vy_std: 0.0
+      TrajectoryValidator:
+        plugin: "mppi::DefaultOptimalTrajectoryValidator"
+        collision_lookahead_time: 2.0
+        consider_footprint: true
+      critics: ["ConstraintCritic", "ObstaclesCritic", "PathAlignCritic","GoalCritic","GoalAngleCritic", "PathFollowCritic", "PreferForwardCritic"]
+      ObstaclesCritic:
+        consider_footprint: true
+      PathAlign:
+        cost_weight: 10.0
+        use_path_orientations: true
+        threshold_to_consider: 0.8
+        
+      PreferForward:
+        cost_weight: 3.0
+        threshold_to_consider: 0.8
 
+      Goal:
+        cost_weight: 8.0
+        threshold_to_consider: 1.0
+
+      GoalAngle:
+        cost_weight: 6.0
+        threshold_to_consider: 1.0
+
+      
 
 planner_server:
   ros__parameters:
@@ -33,22 +42,25 @@ planner_server:
 
     GridBased:
       plugin: "nav2_smac_planner/SmacPlannerHybrid"
-      allow_unknown: true
+      allow_unknown: false
       max_iterations: 1000000
-      minimum_turning_radius: 1.522
       cache_obstacle_heuristic: true
-      reverse_penalty: 2.0
-      change_penalty: 0.3
-      non_straight_penalty: 0.3
+      reverse_penalty: 0.3
+      change_penalty: 1.0
+      cost_penalty: 3.4
+      non_straight_penalty: 1.0
+      motion_model_for_search: "REEDS_SHEPP" 
+      minimum_turning_radius: 1.522
+
 
 global_costmap:
   global_costmap:
     ros__parameters:
-      update_frequency: 1.0
+      update_frequency: 0.5
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_footprint
-      footprint: "[ [0.66, 0.26], [0.66, -0.26], [-0.66, -0.26], [-0.66, 0.26] ]"
+      footprint: "[ [0.66, 0.35], [0.66 0.15], [0.66 0.15], [0.8 0.15], [0.8 -0.08], [0.66 -0.08], [0.66, -0.35], [-0.66, -0.35], [-0.66, 0.35]  ]"
       resolution: 0.05
       track_unknown_space: false
       rolling_window: false
@@ -80,21 +92,25 @@ local_costmap:
   local_costmap:
     ros__parameters:
       update_frequency: 5.0
-      publish_frequency: 2.0
+      publish_frequency: 5.0
       global_frame: odom
       robot_base_frame: base_footprint
       rolling_window: true
       width: 3
       height: 3
       resolution: 0.05
-      footprint: "[ [0.66, 0.26], [0.66, -0.26], [-0.66, -0.26], [-0.66, 0.26] ]"
+      footprint: "[ [0.66, 0.35], [0.66 0.15], [0.66 0.15], [0.8 0.15], [0.8 -0.08], [0.66 -0.08], [0.66, -0.35], [-0.66, -0.35], [-0.66, 0.35]  ]"
       plugins: ["obstacle_layer", "inflation_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         observation_sources: scan
         scan:
           topic: /scan
-          max_obstacle_height: 2.0
+          max_obstacle_height: 1.0
+          obstacle_max_range: 3.0
+          obstacle_min_range: 0.0
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
           clearing: True
           marking: True
           data_type: "LaserScan"
@@ -103,7 +119,9 @@ local_costmap:
         cost_scaling_factor: 3.0
         inflation_radius: 0.2
       always_send_full_costmap: True
-
+bt_navigator:
+  ros__parameters:
+    bt_loop_duration: 100
 amcl:
   ros__parameters:
     map_topic: map              
@@ -115,4 +133,4 @@ amcl:
 map_server:
   ros__parameters:
     use_sim_time: false
-    yaml_filename: "/home/icta/geicar/jetsonNano/ros2_ws/src/geicar_start_jetson/maps/gei_rdc_v1.yaml"
+    yaml_filename: "/home/cassian/geicar/jetsonNano/ros2_ws/src/geicar_start_jetson/maps/gei_rdc_v1.yaml"

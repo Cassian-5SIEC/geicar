@@ -79,6 +79,7 @@ private:
 
   double steering_angle_;
   double velocity_;
+  double min_velocity_;
 
   std::vector<double> wheel_angular_velocity_;
   std::vector<double> wheel_steering_angle_;

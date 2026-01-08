@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
+from vision_msgs.msg import Detection2D, ObjectHypothesisWithPose
 from cv_bridge import CvBridge
 import cv2
 import socket
@@ -95,17 +96,21 @@ class EcoSenseNode(Node):
         self.sub_right = self.create_subscription(Image, '/usb_cam_right/image_raw', self.right_callback, 10)
         self.pub_right = self.create_publisher(Image, '/usb_cam_right/image_processed', 10)
 
+        # --- DETECTION PUBLISHERS ---
+        self.pub_left_det = self.create_publisher(Detection2D, '/usb_cam_left/object_target', 10)
+        self.pub_right_det = self.create_publisher(Detection2D, '/usb_cam_right/object_target', 10)
+
         self.get_logger().info(f"Node started. Target: {server_ip}:{server_port}")
 
     def left_callback(self, msg):
         # Pass the specific LEFT client
-        self.process_image(msg, self.pub_left, self.client_left)
+        self.process_image(msg, self.pub_left, self.pub_left_det, self.client_left)
 
     def right_callback(self, msg):
         # Pass the specific RIGHT client
-        self.process_image(msg, self.pub_right, self.client_right)
+        self.process_image(msg, self.pub_right, self.pub_right_det, self.client_right)
 
-    def process_image(self, msg, publisher, client):
+    def process_image(self, msg, publisher, det_publisher, client):
         """
         Generic processing function.
         It takes the 'client' object as an argument so it knows which socket to use.
@@ -119,12 +124,48 @@ class EcoSenseNode(Node):
         # Use the passed client (Left or Right) to infer
         detections = client.infer(cv_image)
         
+        best_det = None
+        max_area = -1.0
+
         if detections:
             for det in detections:
                 x1, y1, x2, y2 = det['bbox']
                 label = f"{det['class_name']} {det['score']:.2f}"
-                cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(cv_image, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                color_ = (0,255,0)
+                if (det['score'] < 0.8):
+                    color_ = (0,0,255)
+                cv2.rectangle(cv_image, (x1, y1), (x2, y2), color_, 2)
+                cv2.putText(cv_image, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_, 2)
+
+                # Calculate area to find biggest box
+                area = (x2 - x1) * (y2 - y1)
+                if area > max_area:
+                    max_area = area
+                    best_det = det
+
+            # If we found at least one detection, publish the biggest one
+            if best_det is not None:
+                x1, y1, x2, y2 = best_det['bbox']
+                
+                # Publish detection msg
+                det_msg = Detection2D()
+                det_msg.header = msg.header
+                
+                # Bounding Box
+                # vision_msgs Pose2D has 'position' field which contains x, y
+                det_msg.bbox.center.position.x = (x1 + x2) / 2.0
+                det_msg.bbox.center.position.y = (y1 + y2) / 2.0
+                det_msg.bbox.size_x = float(x2 - x1)
+                det_msg.bbox.size_y = float(y2 - y1)
+                
+                # Hypotheses
+                hyp = ObjectHypothesisWithPose()
+                hyp.hypothesis.class_id = best_det['class_name']
+                hyp.hypothesis.score = float(best_det['score'])
+                
+                det_msg.results.append(hyp)
+                
+                det_publisher.publish(det_msg)
 
         out_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
         publisher.publish(out_msg)

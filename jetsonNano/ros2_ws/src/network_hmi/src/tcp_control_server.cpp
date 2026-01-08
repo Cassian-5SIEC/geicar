@@ -25,7 +25,13 @@ TcpControlServer::TcpControlServer(
 
 TcpControlServer::~TcpControlServer()
 {
-    stop();
+    try {
+        stop();
+    } catch (const std::exception & e) {
+        RCLCPP_ERROR(logger_, "Exception in ~TcpControlServer: %s", e.what());
+    } catch (...) {
+        RCLCPP_ERROR(logger_, "Unknown exception in ~TcpControlServer");
+    }
 }
 
 void TcpControlServer::start()
@@ -36,14 +42,39 @@ void TcpControlServer::start()
 
 void TcpControlServer::stop()
 {
+    //RCLCPP_INFO(logger_, "TcpControlServer::stop() entry");
     running_ = false;
+
+    // Close the listening socket first to unblock accept()
     if (server_fd_ != -1) {
-        close(server_fd_); // This unblocks accept()
+        // First try shutdown to interrupt accept/listen
+        shutdown(server_fd_, SHUT_RDWR);
+        close(server_fd_); // This should unblock accept()
         server_fd_ = -1;
     }
+
+    // Make a local copy of client sockets while holding the mutex,
+    // then release the lock and shutdown/close each socket to
+    // promptly unblock client session threads.
+    std::vector<int> client_sockets;
+    {
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+        for (auto &s : client_sessions_) {
+            if (s) client_sockets.push_back(s->get_socket());
+        }
+    }
+
+    for (int sock : client_sockets) {
+        if (sock != -1) {
+            shutdown(sock, SHUT_RDWR);
+            close(sock);
+        }
+    }
+
     if (thread_.joinable()) {
         thread_.join();
     }
+    //RCLCPP_INFO(logger_, "TcpControlServer::stop() exit");
 }
 
 void TcpControlServer::accept_loop()
@@ -77,10 +108,14 @@ void TcpControlServer::accept_loop()
     RCLCPP_INFO(logger_, "TCP Server listening on port %d", port_);
 
     while (running_) {
+        RCLCPP_DEBUG(logger_, "accept_loop: waiting for new connection (server_fd=%d)", server_fd_);
         int new_socket = accept(server_fd_, (struct sockaddr *)&address, (socklen_t *)&addrlen);
         if (new_socket < 0) {
+            int err = errno;
             if (running_) {
-                RCLCPP_WARN(logger_, "TCP accept error: %s", strerror(errno));
+                RCLCPP_WARN(logger_, "TCP accept error: %s", strerror(err));
+            } else {
+                RCLCPP_DEBUG(logger_, "accept returned error %s after running_ set false", strerror(err));
             }
             continue;
         }

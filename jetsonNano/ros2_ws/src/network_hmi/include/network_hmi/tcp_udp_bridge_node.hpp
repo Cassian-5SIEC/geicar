@@ -4,6 +4,9 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "interfaces/msg/joystick_order.hpp"
 #include "interfaces/msg/general_data.hpp"
 #include "interfaces/msg/control.hpp"
@@ -58,6 +61,11 @@ private:
     std::unique_ptr<UdpDataSender> udp_sender_;
     std::unique_ptr<UdpDataReceiver> udp_receiver_;
     std::unique_ptr<TcpControlServer> tcp_server_;
+
+    // --- TF ---
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
 
     // --- Image fragmentation constants ---
     static constexpr int IMAGE_PACKET_PAYLOAD_SIZE = 1400; 

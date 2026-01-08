@@ -11,6 +11,7 @@
 #include "interfaces/msg/steering_calibration.hpp"
 #include "interfaces/msg/joystick_order.hpp"
 #include "interfaces/msg/ultrasonic.hpp"
+#include "interfaces/msg/control.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "std_msgs/msg/float64.hpp"
 
@@ -54,6 +55,9 @@ public:
         subscription_motors_feedback_ = this->create_subscription<interfaces::msg::MotorsFeedback>(
         "motors_feedback", 10, std::bind(&car_control::motorsFeedbackCallback, this, _1));
 
+        subscription_control_ = this->create_subscription<interfaces::msg::Control>(
+        "control_msg", 10, std::bind(&car_control::ControlCallback, this, _1));
+
         subscription_speed_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
         "speed_command", 10, std::bind(&car_control::SpeedCallback, this, _1));
 
@@ -61,11 +65,39 @@ public:
         "steer_command", 10, std::bind(&car_control::SteerCallback, this, _1));
 
         timer_ = this->create_wall_timer(PERIOD_UPDATE_CMD, std::bind(&car_control::updateCmd, this));
-
     }
 
     
 private:
+
+    void ControlCallback(const interfaces::msg::Control::SharedPtr controlMsg) {
+        if (controlMsg->command == "stop") {
+            start = false;
+            stop = true;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Stop sending motor orders");
+        } else if (controlMsg->command == "start"){
+            if (controlMsg->sender == "xbox"){
+                start = true;
+                stop = false;
+                inputSource = SOURCE_JOYSTICK;
+                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders from XBOX");
+            } else if (controlMsg->sender == "network_hmi"){
+                start = true;
+                stop = false;
+                inputSource = SOURCE_HMI;
+                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders from HMI");
+            }
+        } else if (controlMsg->command == "manual"){
+            mode = MODE_MANUAL;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to MANUAL Mode");
+        } else if (controlMsg->command == "autonomous"){
+            mode = MODE_AUTONOMOUS;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to AUTONOMOUS Mode");
+        } else if (controlMsg->command == "calibration"){
+            mode = MODE_CALIBRATION;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to STEERING CALIBRATION Mode");
+        }
+    }
 
     /* Update start, mode, requestedThrottle, requestedSteerAngle and reverse from joystick order [callback function]  :
     *
@@ -73,34 +105,6 @@ private:
     * 
     */
     void joystickOrderCallback(const interfaces::msg::JoystickOrder::SharedPtr joyOrder) {
-        if (joyOrder->start && joyOrder->start != start){
-            if (start){
-                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders");
-                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Input from Joystick");
-            }
-            start = joyOrder->start;
-            if (inputSource != SOURCE_JOYSTICK){
-                inputSource = SOURCE_JOYSTICK;
-            }
-        } 
-        if (!joyOrder->start && joyOrder->start != start){
-            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Stop sending motor orders");
-            start = joyOrder->start;
-        }
-        
-        //if mode change
-        if (joyOrder->mode != mode && joyOrder->mode != -1 && inputSource == SOURCE_JOYSTICK){ 
-            mode = joyOrder->mode;
-
-            if (mode==0){
-                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to MANUAL Mode");
-            }else if (mode==1){
-                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to AUTONOMOUS Mode");
-            }else if (mode==2){
-                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to STEERING CALIBRATION Mode");
-            }
-        }
-        
         if (mode == MODE_MANUAL && start && inputSource == SOURCE_JOYSTICK){  //if manual mode -> update requestedThrottle, requestedSteerAngle and reverse from joystick order
             requestedThrottle = joyOrder->throttle;
             requestedSteerAngle = joyOrder->steer;
@@ -108,33 +112,7 @@ private:
         }
     }
 
-    void hmiOrderCallback(const interfaces::msg::JoystickOrder::SharedPtr hmiOrder) {
-        if (hmiOrder->start && hmiOrder->start != start){
-            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders");
-            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Input from HMI");
-            start = hmiOrder->start;
-            if (inputSource != SOURCE_HMI){
-                inputSource = SOURCE_HMI;
-            }
-        } 
-        if (!hmiOrder->start && hmiOrder->start != start){
-            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Stop sending motor orders");
-            start = hmiOrder->start;
-        }
-        
-        //if mode change
-        if (hmiOrder->mode != mode && hmiOrder->mode != -1 && inputSource == SOURCE_HMI){ 
-            mode = hmiOrder->mode;
-
-            if (mode==0){
-                RCLCPP_INFO(this->get_logger(), "Switching to MANUAL Mode from HMI");
-            }else if (mode==1){
-                RCLCPP_INFO(this->get_logger(), "Switching to AUTONOMOUS Mode from HMI");
-            }else if (mode==2){
-                RCLCPP_INFO(this->get_logger(), "Switching to STEERING CALIBRATION Mode from HMI");
-            }
-        }
-        
+    void hmiOrderCallback(const interfaces::msg::JoystickOrder::SharedPtr hmiOrder) {        
         if (mode == MODE_MANUAL && start && inputSource == SOURCE_HMI){  //if manual mode -> update requestedThrottle, requestedSteerAngle and reverse from joystick order
             requestedThrottle = hmiOrder->throttle;
             requestedSteerAngle = hmiOrder->steer;
@@ -257,6 +235,7 @@ private:
     rclcpp::Subscription<interfaces::msg::JoystickOrder>::SharedPtr subscription_hmi_order_;
     rclcpp::Subscription<interfaces::msg::MotorsFeedback>::SharedPtr subscription_motors_feedback_;
     rclcpp::Subscription<interfaces::msg::Ultrasonic>::SharedPtr subscription_us_emergency_;
+    rclcpp::Subscription<interfaces::msg::Control>::SharedPtr subscription_control_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_speed_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_steering_;
 

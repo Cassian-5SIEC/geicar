@@ -113,8 +113,7 @@ private:
         
 
         if (buttonA || buttonY || buttonDpadBottom){
-
-            if (buttonY)
+            if (buttonY){
                 if (mode != 0) {
                     auto controlMsg = interfaces::msg::Control();
                     controlMsg.command = "manual";
@@ -122,7 +121,8 @@ private:
                     publisher_control_msg_->publish(controlMsg);
                 }
                 mode = 0;
-            else if (buttonA)
+            }
+            else if (buttonA){
                 if (mode != 1) {
                     auto controlMsg = interfaces::msg::Control();
                     controlMsg.command = "autonomous";
@@ -130,6 +130,7 @@ private:
                     publisher_control_msg_->publish(controlMsg);
                 }
                 mode = 1;
+            }
             else if (buttonDpadBottom && buttonStart){
                 if (mode != 2) {
                     auto controlMsg = interfaces::msg::Control();
@@ -155,9 +156,16 @@ private:
 
         // ------ Start and Stop ------
         if (buttonB){       // B button -> Stop the car
+            auto controlMsg = interfaces::msg::Control();
+            controlMsg.command = "stop";
+            controlMsg.sender = "xbox";
+            publisher_control_msg_->publish(controlMsg);
             start = false;
-
-        }else if (buttonStart && mode !=2){   // Start button -> Start the car    
+        } else if (buttonStart && mode !=2){   // Start button -> Start the car 
+            auto controlMsg = interfaces::msg::Control();
+            controlMsg.command = "start";
+            controlMsg.sender = "xbox";
+            publisher_control_msg_->publish(controlMsg);               
             start = true;
         }
 
@@ -190,7 +198,6 @@ private:
         
 
         auto joystickOrderMsg = interfaces::msg::JoystickOrder();
-        joystickOrderMsg.start = start;
         joystickOrderMsg.mode = mode;
         joystickOrderMsg.throttle = requestedThrottle;
         joystickOrderMsg.steer  = requestedAngle;
@@ -220,7 +227,7 @@ private:
 
     rclcpp::Publisher<interfaces::msg::JoystickOrder>::SharedPtr publisher_joystick_order_;
     rclcpp::Publisher<interfaces::msg::SystemCheck>::SharedPtr publisher_system_check_;
-
+    rclcpp::Publisher<interfaces::msg::Control>::SharedPtr publisher_control_msg_;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr subscription_joy_;
 };
 
