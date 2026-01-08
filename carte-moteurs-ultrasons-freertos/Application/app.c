@@ -96,11 +96,13 @@ void APP_Init(void) {
 	// Control
 	CAR_CONTROL_Init();
 
+	// I2C
+	I2C_init() ;
+
 	// Tasks
 	TASKS_Init();
 
-	// I2C
-	I2C_init() ;
+
 
 
 	/* Steering Initialization*/

@@ -37,7 +37,7 @@ extern "C" {
 #define REG_PWR_LIMIT			0x11
 #define REG_MANAFACTURER_ID		0x3E
 
-#define I2C_TIMEOUT 			10000
+#define I2C_TIMEOUT 			10
 void I2C_init() ;
 
 void I2C_Init_Battery_Reg() ;
