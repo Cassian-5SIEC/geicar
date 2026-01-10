@@ -38,7 +38,6 @@ public:
         publisher_steeringCalibration_ = this->create_publisher<interfaces::msg::SteeringCalibration>("steering_calibration", 10);
         publisher_systemCheck_ = this->create_publisher<interfaces::msg::SystemCheck>("system_check", 10);
 
-
         if (initCommunication()==0){
             readData(); 
             closeCommunication();
@@ -217,7 +216,8 @@ private:
             }else if (frame.can_id==ID_IMU1){    
                 RCLCPP_DEBUG(this->get_logger(), "Publishing to imu/mag Topic");
                 auto imu_mag_msg = sensor_msgs::msg::MagneticField();
-
+                imu_mag_msg.header.stamp = rclcpp::Clock().now();
+                
                 int mag_x = (frame.data[0]<<8) + frame.data[1];
                 int mag_y = (frame.data[2]<<8) + frame.data[3];
                 int mag_z = (frame.data[4]<<8) + frame.data[5];
@@ -236,8 +236,6 @@ private:
                 imu_mag_msg.magnetic_field.x = mag_x * pow(10,-7);
                 imu_mag_msg.magnetic_field.y = mag_y * pow(10,-7);
                 imu_mag_msg.magnetic_field.z = mag_z * pow(10,-7);
-
-                imu_mag_msg.header.stamp = rclcpp::Clock().now();
 
                 publisher_imu_mag_->publish(imu_mag_msg); 
 
@@ -268,8 +266,11 @@ private:
             * Published values in [m/s²] and [rad/s]
             */
             }else if (frame.can_id==ID_IMU3){ //Update acceleration + publish acceleration and angular velocity
-                RCLCPP_DEBUG(this->get_logger(), "Publishing to imu/raw Topic");
+                // Stamp current time
                 auto imu_raw_msg = sensor_msgs::msg::Imu();
+                imu_raw_msg.header.stamp = rclcpp::Clock().now();
+
+                RCLCPP_DEBUG(this->get_logger(), "Publishing to imu/raw Topic");
 
                 int acc_x = (frame.data[0]<<8) + frame.data[1];
                 int acc_y = (frame.data[2]<<8) + frame.data[3];
@@ -295,7 +296,6 @@ private:
                 imu_raw_msg.angular_velocity.y = ang_vel_y * pow(1.7453,-5);    //Conversion to [rad/s]
                 imu_raw_msg.angular_velocity.z = ang_vel_z * pow(1.7453,-5);    //Conversion to [rad/s]
 
-                imu_raw_msg.header.stamp = rclcpp::Clock().now();
                 publisher_imu_raw_->publish(imu_raw_msg);
 
 

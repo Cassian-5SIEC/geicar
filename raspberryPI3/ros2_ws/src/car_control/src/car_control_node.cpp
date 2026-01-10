@@ -11,6 +11,9 @@
 #include "interfaces/msg/steering_calibration.hpp"
 #include "interfaces/msg/joystick_order.hpp"
 #include "interfaces/msg/ultrasonic.hpp"
+#include "interfaces/msg/control.hpp"
+#include "std_msgs/msg/float64_multi_array.hpp"
+#include "std_msgs/msg/float64.hpp"
 
 #include "std_srvs/srv/empty.hpp"
 
@@ -38,74 +41,82 @@ public:
         currentAngle = 0.0f;
         leftRearPwmCmd = STOP;
         rightRearPwmCmd = STOP;
-        steeringPwmCmd = STOP;
+        steeringPwmCmd = SERVO_ZERO;
     
 
         publisher_can_= this->create_publisher<interfaces::msg::MotorsOrder>("motors_order", 10);
 
-        publisher_steeringCalibration_ = this->create_publisher<interfaces::msg::SteeringCalibration>("steering_calibration", 10);
+        subscription_joystick_order_ = this->create_subscription<interfaces::msg::JoystickOrder>(
+        "joystick_order", 10, std::bind(&car_control::joystickOrderCallback, this, _1));
 
-        
+        subscription_hmi_order_ = this->create_subscription<interfaces::msg::JoystickOrder>(
+        "network_joystick_order", 10, std::bind(&car_control::hmiOrderCallback, this, _1));
 
-    subscription_joystick_order_ = this->create_subscription<interfaces::msg::JoystickOrder>(
-    "joystick_order", 10, std::bind(&car_control::joystickOrderCallback, this, _1));
+        subscription_motors_feedback_ = this->create_subscription<interfaces::msg::MotorsFeedback>(
+        "motors_feedback", 10, std::bind(&car_control::motorsFeedbackCallback, this, _1));
 
-    subscription_motors_feedback_ = this->create_subscription<interfaces::msg::MotorsFeedback>(
-    "motors_feedback", 10, std::bind(&car_control::motorsFeedbackCallback, this, _1));
+        subscription_control_ = this->create_subscription<interfaces::msg::Control>(
+        "control_msg", 10, std::bind(&car_control::ControlCallback, this, _1));
 
-    subscription_steering_calibration_ = this->create_subscription<interfaces::msg::SteeringCalibration>(
-    "steering_calibration", 10, std::bind(&car_control::steeringCalibrationCallback, this, _1));
+        subscription_speed_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
+        "speed_command", 10, std::bind(&car_control::SpeedCallback, this, _1));
 
-    subscription_us_emergency_ = this->create_subscription<interfaces::msg::Ultrasonic>(
-    "us_data", 10, std::bind(&car_control::EmergencyCallback, this, _1));
-
-
-        server_calibration_ = this->create_service<std_srvs::srv::Empty>(
-                            "steering_calibration", std::bind(&car_control::steeringCalibration, this, std::placeholders::_1, std::placeholders::_2));
+        subscription_steering_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
+        "steer_command", 10, std::bind(&car_control::SteerCallback, this, _1));
 
         timer_ = this->create_wall_timer(PERIOD_UPDATE_CMD, std::bind(&car_control::updateCmd, this));
-
-        
-        RCLCPP_INFO(this->get_logger(), "car_control_node READY");
     }
 
     
 private:
 
+    void ControlCallback(const interfaces::msg::Control::SharedPtr controlMsg) {
+        if (controlMsg->command == "stop") {
+            start = false;
+            stop = true;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Stop sending motor orders");
+        } else if (controlMsg->command == "start"){
+            if (controlMsg->sender == "xbox"){
+                start = true;
+                stop = false;
+                inputSource = SOURCE_JOYSTICK;
+                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders from XBOX");
+            } else if (controlMsg->sender == "network_hmi"){
+                start = true;
+                stop = false;
+                inputSource = SOURCE_HMI;
+                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders from HMI");
+            }
+        } else if (controlMsg->command == "manual"){
+            mode = MODE_MANUAL;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to MANUAL Mode");
+        } else if (controlMsg->command == "autonomous"){
+            mode = MODE_AUTONOMOUS;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to AUTONOMOUS Mode");
+        } else if (controlMsg->command == "calibration"){
+            mode = MODE_CALIBRATION;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Switching to STEERING CALIBRATION Mode");
+        }
+    }
+
     /* Update start, mode, requestedThrottle, requestedSteerAngle and reverse from joystick order [callback function]  :
     *
-    * This function is called when a message is published on the "/joystick_order" topic
+    * This function is called when a message is published on the "/joystick_order" topic or on the "/network_joystick_order" topic
     * 
     */
     void joystickOrderCallback(const interfaces::msg::JoystickOrder::SharedPtr joyOrder) {
-
-        if (joyOrder->start != start){
-            start = joyOrder->start;
-
-            if (start)
-                RCLCPP_INFO(this->get_logger(), "START");
-            else 
-                RCLCPP_INFO(this->get_logger(), "STOP");
-        }
-        
-
-        if (joyOrder->mode != mode && joyOrder->mode != -1){ //if mode change
-            mode = joyOrder->mode;
-
-            if (mode==0){
-                RCLCPP_INFO(this->get_logger(), "Switching to MANUAL Mode");
-            }else if (mode==1){
-                RCLCPP_INFO(this->get_logger(), "Switching to AUTONOMOUS Mode");
-            }else if (mode==2){
-                RCLCPP_INFO(this->get_logger(), "Switching to STEERING CALIBRATION Mode");
-                startSteeringCalibration();
-            }
-        }
-        
-        if (mode == 0 && start){  //if manual mode -> update requestedThrottle, requestedSteerAngle and reverse from joystick order
+        if (mode == MODE_MANUAL && start && inputSource == SOURCE_JOYSTICK){  //if manual mode -> update requestedThrottle, requestedSteerAngle and reverse from joystick order
             requestedThrottle = joyOrder->throttle;
             requestedSteerAngle = joyOrder->steer;
             reverse = joyOrder->reverse;
+        }
+    }
+
+    void hmiOrderCallback(const interfaces::msg::JoystickOrder::SharedPtr hmiOrder) {        
+        if (mode == MODE_MANUAL && start && inputSource == SOURCE_HMI){  //if manual mode -> update requestedThrottle, requestedSteerAngle and reverse from joystick order
+            requestedThrottle = hmiOrder->throttle;
+            requestedSteerAngle = hmiOrder->steer;
+            reverse = hmiOrder->reverse;
         }
     }
 
@@ -137,167 +148,71 @@ private:
         stop = false;
 
         int8_t steeringVal = static_cast<int8_t>(std::round(requestedSteerAngle * 127.0f));
-        motorsOrder.steering_angle = steeringVal;
+        
 
-        if (!start){    //Car stopped or Emergency Stop
-
+        if (!start) {
             leftRearPwmCmd = STOP;
             rightRearPwmCmd = STOP;
-            //steeringPwmCmd = STOP;
-
-
-        }else{ //Car started
-
+            steeringVal = SERVO_ZERO;
+        } else {
             //Manual Mode
-            if (mode==0){
-                
+            if (mode == MODE_MANUAL){
                 manualPropulsionCmd(requestedThrottle, reverse, leftRearPwmCmd,rightRearPwmCmd);
-
                 //steeringCmd(requestedSteerAngle,currentAngle, steeringPwmCmd);
-
-
-            //Autonomous Mode
-            } else if (mode==1){
-                //...
             }
         }
 
-        // Forward + straight limits
-        //if (!reverse && EmergencyStop[1]) stop = true;
-//
-        //// Reverse + straight limits
-        //else if (reverse && EmergencyStop[4]) stop = true;
-
-        if (!reverse){
-            for (int i=0; i<3; i++){
-                if (EmergencyStop[i]){
-                    stop = true;
-                    break;
-                }
-            }
-        }
-
-        else{
-            for (int i=3; i<6; i++){
-                if (EmergencyStop[i]){
-                    stop = true;
-                    break;
-                }
-            }
-        }
-
-        //// Forward + steering right
-        //else if (!reverse && EmergencyStop[0] && motorsOrder.steering_angle > STOP)
-        //    stop = true;
-//
-        //// Forward + steering left
-        //else if (!reverse && EmergencyStop[2] && motorsOrder.steering_angle < STOP)
-        //    stop = true;
-//
-        //// Reverse + steering left
-        //else if (reverse && EmergencyStop[5] && motorsOrder.steering_angle < STOP)
-        //    stop = true;
-//
-        //// Reverse + steering right (rear right)
-        //else if (reverse && EmergencyStop[3] && motorsOrder.steering_angle > STOP)
-        //    stop = true;
-
-        if (stop) {
-            leftRearPwmCmd  = STOP;
-            rightRearPwmCmd = STOP;
-        }else{
-
-            //Send order to motors
-            motorsOrder.left_rear_pwm = leftRearPwmCmd;
-            motorsOrder.right_rear_pwm = rightRearPwmCmd;
-            
-            // steering already computed above
-            currentAngle = requestedSteerAngle;
-        }
-
+        //Send order to motors
+        motorsOrder.left_rear_pwm = leftRearPwmCmd;
+        motorsOrder.right_rear_pwm = rightRearPwmCmd;
+        motorsOrder.steering_angle = steeringVal;
+        // steering already computed above
+        currentAngle = requestedSteerAngle;
         publisher_can_->publish(motorsOrder);
     }
 
+    /* ------------ Receive orders from Autonomous stack -----------*/
 
-    /* Start the steering calibration process :
-    *
-    * Publish a calibration request on the "/steering_calibration" topic
-    */
-    void startSteeringCalibration(){
-
-        auto calibrationMsg = interfaces::msg::SteeringCalibration();
-        calibrationMsg.request = true;
-
-        RCLCPP_INFO(this->get_logger(), "Sending calibration request .....");
-        publisher_steeringCalibration_->publish(calibrationMsg);
-    }
-
-
-    /* Function called by "steering_calibration" service
-    * 1. Switch to calibration mode
-    * 2. Call startSteeringCalibration function
-    */
-    void steeringCalibration([[maybe_unused]] std_srvs::srv::Empty::Request::SharedPtr req,
-                            [[maybe_unused]] std_srvs::srv::Empty::Response::SharedPtr res)
-    {
-
-        mode = 2;    //Switch to calibration mode
-        RCLCPP_WARN(this->get_logger(), "Switching to STEERING CALIBRATION Mode");
-        startSteeringCalibration();
-    }
-    
-
-    /* Manage steering calibration process [callback function]  :
-    *
-    * This function is called when a message is published on the "/steering_calibration" topic
-    */
-    void steeringCalibrationCallback (const interfaces::msg::SteeringCalibration::SharedPtr calibrationMsg){
-
-        if (calibrationMsg->in_progress == true && calibrationMsg->user_need == false){
-        RCLCPP_INFO(this->get_logger(), "Steering Calibration in progress, please wait ....");
-
-        } else if (calibrationMsg->in_progress == true && calibrationMsg->user_need == true){
-            RCLCPP_WARN(this->get_logger(), "Please use the buttons (L/R) to center the steering wheels.\nThen, press the blue button on the NucleoF103 to continue");
-        
-        } else if (calibrationMsg->status == 1){
-            RCLCPP_INFO(this->get_logger(), "Steering calibration [SUCCESS]");
-            RCLCPP_INFO(this->get_logger(), "Switching to MANUAL Mode");
-            mode = 0;    //Switch to manual mode
-            start = false;  //Stop car
-        
-        } else if (calibrationMsg->status == -1){
-            RCLCPP_ERROR(this->get_logger(), "Steering calibration [FAILED]");
-            RCLCPP_INFO(this->get_logger(), "Switching to MANUAL Mode");
-            mode = 0;    //Switch to manual mode
-            start = false;  //Stop car
+    void SpeedCallback(const std_msgs::msg::Float64MultiArray Msg) {
+        if (mode == MODE_AUTONOMOUS){
+            if((Msg.data[0]/maxSpeed) > 1 || (Msg.data[0]/maxSpeed) < -1){
+                RCLCPP_INFO(this->get_logger(), "I'm bigger then 1");
+                leftRearPwmCmd = 100;
+            } else {
+                leftRearPwmCmd = 50 + Msg.data[0]/maxSpeed *50;
+            }
+            if((Msg.data[1]/maxSpeed) > 1 || (Msg.data[0]/maxSpeed) < -1){
+                rightRearPwmCmd = 100;
+            } else {
+                rightRearPwmCmd = 50 + Msg.data[1]/maxSpeed *50;
+            }
         }
-    
     }
 
-    /*EMERGENCY STOP*/
-        void EmergencyCallback(const interfaces::msg::Ultrasonic::SharedPtr USMsg) {// in centemetre
-            /*I think we have to do some math to get the distance of the obstecle but i'm simplifing it now and saying it gives us directly a distance*/
-            EmergencyStop[0] = (USMsg->front_left  < 50);
-            EmergencyStop[1] = (USMsg->front_center < 50);
-            EmergencyStop[2] = (USMsg->front_right < 50);
-            EmergencyStop[3] = (USMsg->rear_right  < 50);
-            EmergencyStop[4] = (USMsg->rear_center < 50);
-            EmergencyStop[5] = (USMsg->rear_left   < 50);
+    void SteerCallback(const std_msgs::msg::Float64MultiArray Msg) {
+        if (mode == MODE_AUTONOMOUS){
+            if (Msg.data[0] < STEERING_CENTER){
+                requestedSteerAngle = Msg.data[0]*SERVO_FULL_LEFT/STEERING_MAX_LEFT;
+            }
+            else{
+                requestedSteerAngle = Msg.data[0]*SERVO_FULL_RIGHT/STEERING_MAX_RIGHT;
+            }
+        }
     }
-
-
     
     // ---- Private variables ----
 
     //General variables
-    bool start;
+    bool start = false;
     bool stop = false;
     // EmergencyStop indices:
     // 0: front_left, 1: front_center, 2: front_right,
     // 3: rear_right, 4: rear_center, 5: rear_left
     std::array<bool, 6> EmergencyStop{}; // all false initially
     int mode;    //0 : Manual    1 : Auto    2 : Calibration
-
+    const double wheel_radius = 0.095; // in meters
+    double maxSpeed = 0.53/ wheel_radius; // vitesse angulaire du robot
+    int inputSource = -1; // 0: joystick, 1: HMI
     
     //Motors feedback variables
     float currentAngle;
@@ -314,19 +229,18 @@ private:
 
     //Publishers
     rclcpp::Publisher<interfaces::msg::MotorsOrder>::SharedPtr publisher_can_;
-    rclcpp::Publisher<interfaces::msg::SteeringCalibration>::SharedPtr publisher_steeringCalibration_;
 
     //Subscribers
     rclcpp::Subscription<interfaces::msg::JoystickOrder>::SharedPtr subscription_joystick_order_;
+    rclcpp::Subscription<interfaces::msg::JoystickOrder>::SharedPtr subscription_hmi_order_;
     rclcpp::Subscription<interfaces::msg::MotorsFeedback>::SharedPtr subscription_motors_feedback_;
-    rclcpp::Subscription<interfaces::msg::SteeringCalibration>::SharedPtr subscription_steering_calibration_;
     rclcpp::Subscription<interfaces::msg::Ultrasonic>::SharedPtr subscription_us_emergency_;
+    rclcpp::Subscription<interfaces::msg::Control>::SharedPtr subscription_control_;
+    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_speed_;
+    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_steering_;
 
     //Timer
     rclcpp::TimerBase::SharedPtr timer_;
-
-    //Steering calibration Service
-    rclcpp::Service<std_srvs::srv::Empty>::SharedPtr server_calibration_;
 };
 
 

@@ -13,6 +13,8 @@
   <depend>interfaces</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
+  <depend>std_msg</depend>
+  <depend>geometry_msgs</depend> 
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

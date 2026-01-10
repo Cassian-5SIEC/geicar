@@ -46,27 +46,27 @@ uint32_t counter_task_send_values_GPS;
 
 /*********************************
  * Task task_send_values_IMU
- * Periodic: 5hz (200 ms)
+ * Periodic: 50hz (20 ms)
  */
 void task_send_values_IMU (void);
 uint32_t counter_task_send_values_IMU;
-#define PERIOD_TASK_SEND_VALUES_IMU 200
+#define PERIOD_TASK_SEND_VALUES_IMU 20
 
 /*********************************
  * Task task_get_acceleration
- * Periodic: 12.5hz (80 ms)
+ * Periodic: 50hz (20 ms)
  */
 void task_get_acceleration (void);
 uint32_t counter_task_get_acceleration;
-#define PERIOD_TASK_GET_ACCELERATION 80
+#define PERIOD_TASK_GET_ACCELERATION 20
 
 /*********************************
  * Task task_get_rotation
- * Periodic: 12.5hz (80 ms)
+ * Periodic: 50hz (20 ms)
  */
 void task_get_rotation (void);
 uint32_t counter_task_get_rotation;
-#define PERIOD_TASK_GET_ROTATION 80
+#define PERIOD_TASK_GET_ROTATION 20
 
 /*********************************
  * Task task_get_magnetic
@@ -78,27 +78,27 @@ uint32_t counter_task_get_magnetic;
 
 /*********************************
  * Task task_get_temperature
- * Periodic: 10hz (100 ms)
+ * Periodic: 1hz (1000 ms)
  */
 void task_get_temperature (void);
 uint32_t counter_task_get_temperature;
-#define PERIOD_TASK_GET_TEMPERATURE 100
+#define PERIOD_TASK_GET_TEMPERATURE 1000
 
 /*********************************
  * Task task_get_pressure
- * Periodic: 10hz (100 ms)
+ * Periodic: 1hz (1000 ms)
  */
 void task_get_pressure (void);
 uint32_t counter_task_get_pressure;
-#define PERIOD_TASK_GET_PRESSURE 100
+#define PERIOD_TASK_GET_PRESSURE 1000
 
 /*********************************
  * Task task_get_humidity
- * Periodic: 10hz (100 ms)
+ * Periodic: 1hz (1000 ms)
  */
 void task_get_humidity (void);
 uint32_t counter_task_get_humidity;
-#define PERIOD_TASK_GET_HUMIDITY 100
+#define PERIOD_TASK_GET_HUMIDITY 1000
 
 /*********************************
  * Task task_update_gps
@@ -159,14 +159,14 @@ void SCHEDULER_Run(void) {
 				counter_task_send_values_IMU++;
 				counter_task_get_acceleration++;
 				counter_task_get_rotation++;
-				counter_task_get_magnetic++;
-				counter_task_get_temperature++;
-				counter_task_get_humidity++;
-				counter_task_get_pressure++;
+				// counter_task_get_magnetic++;
+				// counter_task_get_temperature++;
+				// counter_task_get_humidity++;
+				// counter_task_get_pressure++;
 			}
-
-			counter_task_send_values_GPS++;
-			counter_task_update_gps++;
+			/* !!!!!!!!!!!!!!! Deactivate GPS tasks  !!!!!!!!!!!!!!!!*/
+			// counter_task_send_values_GPS++;
+			// counter_task_update_gps++;
 		}
 
 		if (counter_task_get_acceleration>= PERIOD_TASK_GET_ACCELERATION) {
@@ -227,18 +227,18 @@ void task_background(void) {
 void task_send_values_IMU (void) {
 
 	//IMU1 : Magnetic field
-	IMU1[6] = 4*sign(current_magnetic_mG.x) + 2*sign(current_magnetic_mG.y) + 1*sign(current_magnetic_mG.z);
+	// IMU1[6] = 4*sign(current_magnetic_mG.x) + 2*sign(current_magnetic_mG.y) + 1*sign(current_magnetic_mG.z);
 
-	int mag_x = abs(current_magnetic_mG.x);
-	int mag_y = abs(current_magnetic_mG.y);
-	int mag_z = abs(current_magnetic_mG.z);
+	// int mag_x = abs(current_magnetic_mG.x);
+	// int mag_y = abs(current_magnetic_mG.y);
+	// int mag_z = abs(current_magnetic_mG.z);
 
-	IMU1[0]= (mag_x & 0xff00)>>8;
-	IMU1[1]= (mag_x & 0xff);
-	IMU1[2]= (mag_y & 0xff00)>>8;
-	IMU1[3]= (mag_y & 0xff);
-	IMU1[4]= (mag_z & 0xff00)>>8;
-	IMU1[5]= (mag_z & 0xff);
+	// IMU1[0]= (mag_x & 0xff00)>>8;
+	// IMU1[1]= (mag_x & 0xff);
+	// IMU1[2]= (mag_y & 0xff00)>>8;
+	// IMU1[3]= (mag_y & 0xff);
+	// IMU1[4]= (mag_z & 0xff00)>>8;
+	// IMU1[5]= (mag_z & 0xff);
 
 	//IMU2 : Angular velocity
 	IMU2[6] = 4*sign(current_angular_rate_mdps.x) + 2*sign(current_angular_rate_mdps.y) + 1*sign(current_angular_rate_mdps.z);
@@ -270,20 +270,20 @@ void task_send_values_IMU (void) {
 	IMU3[5]= (acc_z & 0xff);
 
 	//IMU4 : General (temperature, pressure, humidity)
-	int temp = (int)current_temperature_degC*10;
-	int pressure = current_pressure_hPa;
-	int humidity = current_humidity_perc;
+	// int temp = (int)current_temperature_degC*10;
+	// int pressure = current_pressure_hPa;
+	// int humidity = current_humidity_perc;
 
-	IMU4[0] = (temp >> 8) & 0xff;
-	IMU4[1] = temp & 0xff;
-	IMU4[2] = (pressure >> 8) & 0xff;
-	IMU4[3] = pressure & 0xff;
-	IMU4[4] = humidity & 0xff;
+	// IMU4[0] = (temp >> 8) & 0xff;
+	// IMU4[1] = temp & 0xff;
+	// IMU4[2] = (pressure >> 8) & 0xff;
+	// IMU4[3] = pressure & 0xff;
+	// IMU4[4] = humidity & 0xff;
 
-	CAN_Send(IMU1, CAN_ID_IMU1);
+	// CAN_Send(IMU1, CAN_ID_IMU1);
 	CAN_Send(IMU2,CAN_ID_IMU2);
 	CAN_Send(IMU3,CAN_ID_IMU3);
-	CAN_Send(IMU4,CAN_ID_IMU4);
+	// CAN_Send(IMU4,CAN_ID_IMU4);
 
 
 }

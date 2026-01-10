@@ -1,0 +1,15 @@
+# Initial positions for SO-ARM-100 hardware
+# Corresponding to its neutral, retracted pose
+joints:
+  Shoulder_Rotation:
+      pos: 0.0
+  Shoulder_Pitch:
+      pos: -1.6836
+  Elbow:
+      pos: 1.51
+  Wrist_Pitch:
+      pos: -0.3645
+  Wrist_Roll:
+      pos: 0.0
+  Gripper:
+      pos: 0.0

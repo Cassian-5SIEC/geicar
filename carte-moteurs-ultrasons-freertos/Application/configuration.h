@@ -40,8 +40,8 @@
 #define PERIOD_CAR_CONTROL_LOOP 30 		// Period in ms for car control loop
 										// (30 ms is, because, at max speed, speed sensors update at 25-30 ms
                                         // No need to be faster
-//#define MOTOR_TIMER_PERIOD_MS 	100		// Period in ms to send motors data (speed and odometers)
-#define MOTOR_TIMER_PERIOD_MS 	1000		// Period in ms to send motors data (speed and odometers)
+//#define 	 	100		// Period in ms to send motors data (speed and odometers)
+#define MOTOR_TIMER_PERIOD_MS 	100		// Period in ms to send motors data (speed and odometers)
 #define BATTERY_TIMER_PERIOD_MS	2000 	// Period in ms to send battery level
 #define DEBUG_LOOP_PERIOD_MS	1000	// Debug loop period in ms
 

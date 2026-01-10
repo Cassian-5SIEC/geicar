@@ -98,8 +98,8 @@ uint32_t IKS01A2_Init(void)
 	/*********************************************************
 	 * lsm6dl Initialisation
 	 *
-	 * Output Data Rate (acc)  : 12.5 Hz
-	 * Output Data Rate (gyro) : 12.5 Hz
+	 * Output Data Rate (acc)  : 104 Hz
+	 * Output Data Rate (gyro) : 104 Hz
 	 * Full scale (acc)        : 2g
 	 * Full scale (gyro)       : 500dps
 	 *********************************************************/
@@ -124,8 +124,11 @@ uint32_t IKS01A2_Init(void)
 	/* Enable Block Data Update */
 	lsm6dsl_block_data_update_set(&lsm6dl_handler, PROPERTY_ENABLE);
 	/* Set Output Data Rate */
-	lsm6dsl_xl_data_rate_set(&lsm6dl_handler, LSM6DSL_XL_ODR_12Hz5);
-	lsm6dsl_gy_data_rate_set(&lsm6dl_handler, LSM6DSL_GY_ODR_12Hz5);
+	lsm6dsl_xl_data_rate_set(&lsm6dl_handler, LSM6DSL_XL_ODR_52Hz);
+	lsm6dsl_gy_data_rate_set(&lsm6dl_handler, LSM6DSL_GY_ODR_52Hz);
+	/* Set Power Mode */
+	lsm6dsl_xl_power_mode_set(&lsm6dl_handler, LSM6DSL_XL_HIGH_PERFORMANCE);
+	lsm6dsl_gy_power_mode_set(&lsm6dl_handler, LSM6DSL_GY_HIGH_PERFORMANCE);
 	/* Set full scale */
 	lsm6dsl_xl_full_scale_set(&lsm6dl_handler, LSM6DSL_2g);
 	lsm6dsl_gy_full_scale_set(&lsm6dl_handler, LSM6DSL_500dps);
@@ -181,7 +184,7 @@ uint32_t IKS01A2_Init(void)
 	/*********************************************************
 	 * hts221 initialisation
 	 *
-	 * Output Data Rate (mag)  : 10 Hz
+	 * Output Data Rate (mag)  : 1 Hz
 	 *********************************************************/
 	hts221_handler.write_reg = platform_write_hts221;
 	hts221_handler.read_reg = platform_read_hts221;
@@ -215,7 +218,7 @@ uint32_t IKS01A2_Init(void)
 	/*********************************************************
 	 * lps22hb initialisation
 	 *
-	 * Output Data Rate  : 10 Hz
+	 * Output Data Rate  : 1 Hz
 	 *********************************************************/
 	lps22hb_handler.write_reg = platform_write_lps22hb;
 	lps22hb_handler.read_reg = platform_read_lps22hb;
@@ -242,7 +245,7 @@ uint32_t IKS01A2_Init(void)
 	/* Can be set Data-ready signal on INT_DRDY pin */
 	//lps22hb_drdy_on_int_set(&lps22hb_handler, PROPERTY_ENABLE);
 	/* Set Output Data Rate */
-	lps22hb_data_rate_set(&lps22hb_handler, LPS22HB_ODR_10_Hz);
+	lps22hb_data_rate_set(&lps22hb_handler, LPS22HB_ODR_1_Hz);
 
 	return 1;
 }

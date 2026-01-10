@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot  name="ecosense_arm" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find ecosense_arm)/urdf/ecosense_arm.urdf"/>
+
+  <link 
+    name="base_link">
+    <gazebo>
+      <material>Gazebo/Grey</material>
+    </gazebo>
+  </link>
+
+  <xacro:ecosense_arm parent_link="base_link" >
+    <origin xyz="0.6 0.05 0.0" rpy="0 0 0" />
+  </xacro:ecosense_arm>
+</robot>
+  

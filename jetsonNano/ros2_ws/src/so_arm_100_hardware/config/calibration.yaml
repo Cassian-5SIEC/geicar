@@ -1,0 +1,98 @@
+timestamp: '2025-02-02T13:26:42.812769'
+joints:
+  Shoulder_Rotation:
+    max:
+      pos: -1.57079632679489661923
+      ticks: 3053 #right
+      speed: 0
+      load: -1
+    center:
+      pos: 0
+      ticks: 1972
+      speed: 0
+      load: 0
+    min:
+      pos: 1.57079632679489661923
+      ticks: 994 #left
+      speed: 2328
+      load: 0
+  Shoulder_Pitch:
+    min:
+      pos: -1.57079632679489661923
+      ticks: 1142 #retracted
+      speed: 0
+      load: 0
+    center:
+      pos: 0
+      ticks: 2167
+      speed: 0
+      load: 0
+    max:
+      pos: 1.57079632679489661923
+      ticks: 3198
+      speed: -1
+      load: 0
+  Elbow:
+    min:
+      pos: -1.57079632679489661923
+      ticks: 875
+      speed: 0
+      load: 0
+    center:
+      pos: 0.0
+      ticks: 1903
+      speed: 0
+      load: 0
+    max:
+      pos: 1.57079632679489661923
+      ticks: 2916 #retracted
+      speed: 50
+      load: 0
+  Wrist_Pitch:
+    min:
+      pos: -3.14159265358979323846
+      ticks: 1060
+      speed: 0
+      load: 0
+    center:
+      pos: -1.57079632679489661923
+      ticks: 2052
+      speed: -1
+      load: 0
+    max:
+      pos: 0.0
+      ticks: 3044
+      speed: 0
+      load: 0
+  Wrist_Roll:
+    min:
+      pos: -1.57079632679489661923
+      ticks: 1500
+      speed: 0
+      load: 0
+    center:
+      pos: 0.0
+      ticks: 1800
+      speed: 0
+      load: 0
+    max:
+      pos: 1.57079632679489661923
+      ticks: 3090
+      speed: 0
+      load: -918
+  Gripper:
+    min:
+      pos: 0.0
+      ticks: 2033
+      speed: 0
+      load: 0
+    center:
+      pos: 0.0
+      ticks: 2167
+      speed: -1
+      load: 0
+    max:
+      pos: 1.57079632679489661923
+      ticks: 3208
+      speed: 0
+      load: 0
