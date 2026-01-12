@@ -455,7 +455,16 @@ static void BatteryTimerCallback(TimerHandle_t xTimer) {
 	MEASURES_SendBatteryLevel();
 }
 
-static uint8_t * data = NULL;
+static uint8_t data_c[2] ; //* table to store the measured current */
+static float current ; //* variable to store the real value of the current */
+static int16_t current_temp ; //* temporary variable to convert the hexa value into decimal */
+static uint8_t data_v[2] ; //* table to store the measured voltage */
+static float voltage ; //* table to store the measured voltage */
+static uint16_t voltage_temp ; //* temporary variable to convert the hexa value into decimal */
+static uint8_t data_p[2] ; //* table to store the measured power */
+static float power ; //* table to store the measured power */
+static uint16_t power_temp ; //* temporary variable to convert the hexa value into decimal */
+
 /**
  * @brief  Callback function for the battery timer.
  * This function is called when the battery timer expires.
@@ -463,12 +472,20 @@ static uint8_t * data = NULL;
  */
 static void INABatteryTimerCallback(TimerHandle_t xTimer) {
 	/* read current value*/
-	I2C_Read_Current(ADDR_BATTERY, data ) ;
-	// printf("%hhn",data) ;
-	I2C_Read_Voltage(ADDR_BATTERY, data ) ;
-	// printf("%hhn",data) ;
-	I2C_Read_Power(ADDR_BATTERY, data ) ;
-	// printf("%hhn",data) ;
+	I2C_Read_Current(ADDR_BATTERY, data_c ) ;
+	//calculate the real value
+	current_temp = data_c[0]<<8 | data_c[1] ;
+	current = 10.0f * ((float)current_temp) / 32768.0f ;  //10 * current_read / 2^15
+
+	/* read voltage value */
+	I2C_Read_Voltage(ADDR_BATTERY, data_v ) ;
+	voltage_temp = data_v[0]<<8 | data_v[1] ;
+	voltage = (float)voltage_temp * 0.003125f ; //not sure that the computation work
+
+	/* read power */
+	I2C_Read_Power(ADDR_BATTERY, data_p ) ;
+	power_temp =data_p[0]<<8 | data_p[1] ;
+	power = 0.2 * 10.0f * (float)power_temp /32768.0f ;
 
 }
 
