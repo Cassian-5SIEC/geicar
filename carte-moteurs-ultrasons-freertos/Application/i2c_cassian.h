@@ -14,7 +14,7 @@ extern "C" {
 #include "stm32f1xx_hal.h"
 
 //slave address definition
-#define ADDR_BATTERY 0x40 /* 7bits slave address of the battery INA */
+#define ADDR_BATTERY 	0x40 /* 7bits slave address of the battery INA */
 #define ADDR_MOTOR_R 	0x41 /* 7bits slave address of the right motor INA */
 #define ADDR_MOTOR_L	0x44 /* 7bits slave address of the left motor INA */
 #define ADDR_JETSON	0x45 /* 7bits slave address of the jetson INA */
@@ -38,6 +38,10 @@ extern "C" {
 #define REG_MANAFACTURER_ID		0x3E
 
 #define I2C_TIMEOUT 			10
+
+
+//#define CURRENT_LSB 			(10.0f/(2.0f^15.0f))
+//static float current_lsb = 10.0f/(2.0f^15) ;
 void I2C_init() ;
 
 void I2C_Init_Battery_Reg() ;

@@ -91,7 +91,7 @@ void I2C_Init_Battery_Reg(){
  */
 void I2C_Read_Current(uint8_t slave_addr, uint8_t * DataCurrent) {
 
-	HAL_I2C_Mem_Read(&hi2c1,((slave_addr<<1)+1),REG_CURRENT,I2C_MEMADD_SIZE_8BIT,DataCurrent,I2C_DATA_SIZE, I2C_TIMEOUT ) ;
+	HAL_I2C_Mem_Read(&hi2c1,((slave_addr<<1)),REG_CURRENT,I2C_MEMADD_SIZE_8BIT,DataCurrent,I2C_DATA_SIZE, I2C_TIMEOUT ) ;
 }
 
 /**
@@ -101,7 +101,7 @@ void I2C_Read_Current(uint8_t slave_addr, uint8_t * DataCurrent) {
  */
 void I2C_Read_Voltage(uint8_t slave_addr, uint8_t * DataVoltage) {
 
-	HAL_I2C_Mem_Read(&hi2c1,((slave_addr<<1)+1),REG_VBUS,I2C_MEMADD_SIZE_8BIT,DataVoltage,I2C_DATA_SIZE , I2C_TIMEOUT) ;
+	HAL_I2C_Mem_Read(&hi2c1,((slave_addr<<1)),REG_VBUS,I2C_MEMADD_SIZE_8BIT,DataVoltage,I2C_DATA_SIZE , I2C_TIMEOUT) ;
 }
 
 /**
@@ -111,5 +111,5 @@ void I2C_Read_Voltage(uint8_t slave_addr, uint8_t * DataVoltage) {
  */
 void I2C_Read_Power(uint8_t slave_addr, uint8_t * DataPower) {
 
-	HAL_I2C_Mem_Read(&hi2c1,((slave_addr<<1)+1),REG_POWER,I2C_MEMADD_SIZE_8BIT,DataPower,I2C_DATA_SIZE, I2C_TIMEOUT ) ;
+	HAL_I2C_Mem_Read(&hi2c1,((slave_addr<<1)),REG_POWER,I2C_MEMADD_SIZE_8BIT,DataPower,I2C_DATA_SIZE, I2C_TIMEOUT ) ;
 }
