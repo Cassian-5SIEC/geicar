@@ -20,7 +20,7 @@ using namespace std::placeholders;
 
 // Nom du Frame sur lequel toutes les décisions doivent être basées
 const std::string TARGET_FRAME = "base_link"; 
-const int SAFETY_DISTANCE_DEFAULT = 500; // 500 mm (0.5 m)
+const int SAFETY_DISTANCE_DEFAULT = 500; // 600 mm (0.6 m)
 
 class EmergencyBrakeNode : public rclcpp::Node
 {
@@ -31,8 +31,8 @@ public:
     {
         // --- DÉCLARATION DES PARAMÈTRES (Sécurité et Dimensions du Véhicule)
         this->declare_parameter("safety_distance_mm", SAFETY_DISTANCE_DEFAULT);
-        // Offsets calculés (0.83m pour l'avant, -0.66m pour l'arrière)
-        this->declare_parameter("L_OFFSET_FRONT", 0.83);   
+        // Offsets calculés (0.90m pour l'avant, -0.66m pour l'arrière)
+        this->declare_parameter("L_OFFSET_FRONT", 0.90);   
         this->declare_parameter("L_OFFSET_REAR", -0.66);  
         this->declare_parameter("W_ROBOT", 0.523);        
         this->declare_parameter("LIDAR_FRAME_ID", "rplidar_link"); 
@@ -205,7 +205,8 @@ private:
         auto emergency_msg = interfaces::msg::EmergencyStopRequest();
         
         // Décision : Si l'un des capteurs voit un problème, on stoppe tout.
-        bool full_stop_required = lidar_threat_detected_ || us_threat_detected_;
+        // bool full_stop_required = lidar_threat_detected_ || us_threat_detected_;
+        bool full_stop_required = lidar_threat_detected_ ;
 
         emergency_msg.stop_avant = full_stop_required;
         emergency_msg.stop_arriere = full_stop_required;
