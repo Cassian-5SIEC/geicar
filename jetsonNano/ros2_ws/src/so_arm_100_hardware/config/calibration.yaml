@@ -77,7 +77,7 @@ joints:
       load: 0
     max:
       pos: 1.57079632679489661923
-      ticks: 3090
+      ticks: 2900
       speed: 0
       load: -918
   Gripper:

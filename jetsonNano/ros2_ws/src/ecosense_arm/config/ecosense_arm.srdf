@@ -29,7 +29,7 @@
         <joint name="Wrist_Roll" value="0.0"/>
     </group_state>
     <group_state name="dropping" group="arm">
-        <joint name="Shoulder_Rotation" value="-1.4406"/>
+        <joint name="Shoulder_Rotation" value="-1.50"/>
         <joint name="Shoulder_Pitch" value="-1.2453"/>
         <joint name="Elbow" value="0.412"/>
         <joint name="Wrist_Pitch" value="-0.5698"/>
@@ -43,9 +43,9 @@
     </group_state>
     <group_state name="default_pickup_ready" group="arm">
         <joint name="Shoulder_Rotation" value="0.0"/>
-        <joint name="Shoulder_Pitch" value="0.8159"/>
-        <joint name="Elbow" value="0.7329"/>
-        <joint name="Wrist_Pitch" value="-3.1309"/>
+        <joint name="Shoulder_Pitch" value="0.47123889803"/>
+        <joint name="Elbow" value="1.37881010908"/>
+        <joint name="Wrist_Pitch" value="-2.84488668075"/>
         <joint name="Wrist_Roll" value="0"/>
     </group_state>
     <group_state name="default_pickup" group="arm">

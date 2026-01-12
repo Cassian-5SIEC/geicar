@@ -2,7 +2,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.substitutions import LaunchConfiguration, Command
 from launch.conditions import UnlessCondition # Use IfCondition for "enable" flags
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -115,6 +115,18 @@ def generate_launch_description():
             condition=UnlessCondition(LaunchConfiguration('disable_lidar'))
     )
 
+    ld_lidar_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('ldlidar_ros2'),
+                'launch',
+                'ld06.launch.py')),
+        launch_arguments={
+            'use_sim_time': LaunchConfiguration('use_sim_time')
+        }.items(),
+        condition=UnlessCondition(LaunchConfiguration('disable_lidar'))
+    )
+
     usb_cam_share = get_package_share_directory('usb_cam')
 
     camera_node_1 = Node(
@@ -202,10 +214,11 @@ def generate_launch_description():
                 os.path.join(
                     get_package_share_directory('nav2_bringup'),
                     'launch',
-                    'navigation_launch.py')),
+                    'bringup_launch.py')),
             launch_arguments={
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'params_file': os.path.join(pkg_share, 'config', 'nav2_mppi.yaml'),
+                'map': os.path.join(pkg_share, 'maps', 'gei_rdc_v2.yaml')
             }.items(),
             condition=UnlessCondition(LaunchConfiguration('disable_nav2')),
     )
@@ -244,34 +257,71 @@ def generate_launch_description():
                 launch_arguments={'robot_urdf_path': urdf_model_path}.items(),
     )
 
+    delay_nav2_launch = TimerAction(
+        period=5.0,
+        actions=[nav2_launch_file]
+    )
+
+    args = [
+        disable_robot_state_publisher_arg,
+        declare_disable_lidar_arg,
+        declare_disable_lio_arg,
+        declare_disable_camera_arg,
+        declare_disable_system_check_arg,
+        declare_disable_bridge_arg,
+        declare_use_sim_time_arg,
+        declare_disable_ai_arg,
+        declare_disable_slam_arg,
+        declare_disable_nav2_arg
+    ]
+
+    nodes = [
+        robot_state_publisher_node,
+        lidar_node,
+        ld_lidar_node,
+        camera_node_1,
+        camera_node_2,
+        system_check_ack_node,
+        bridge_node,
+        rf2o_laser_odometry_node,
+        robot_localization_node,
+        # foxglove_server,
+        ai_node,
+        arm_hardware_launch,
+        arm_moveit_launch,
+        # slam_toolbox_launch_file,
+        delay_nav2_launch
+    ]
+
     # --- Add Actions to Launch Description ---
 
     # Add the argument declarations
-    ld.add_action(disable_robot_state_publisher_arg)
-    ld.add_action(declare_disable_lidar_arg)
-    ld.add_action(declare_disable_lio_arg)
-    ld.add_action(declare_disable_camera_arg)
-    ld.add_action(declare_disable_system_check_arg)
-    ld.add_action(declare_disable_bridge_arg)
-    ld.add_action(declare_use_sim_time_arg)
-    ld.add_action(declare_disable_ai_arg)
-    ld.add_action(declare_disable_slam_arg)
-    ld.add_action(declare_disable_nav2_arg)
+    # ld.add_action(disable_robot_state_publisher_arg)
+    # ld.add_action(declare_disable_lidar_arg)
+    # ld.add_action(declare_disable_lio_arg)
+    # ld.add_action(declare_disable_camera_arg)
+    # ld.add_action(declare_disable_system_check_arg)
+    # ld.add_action(declare_disable_bridge_arg)
+    # ld.add_action(declare_use_sim_time_arg)
+    # ld.add_action(declare_disable_ai_arg)
+    # ld.add_action(declare_disable_slam_arg)
+    # ld.add_action(declare_disable_nav2_arg)
 
-    # Add the nodes (they will only be executed if their condition is met)
-    ld.add_action(robot_state_publisher_node)
-    ld.add_action(lidar_node)
-    ld.add_action(camera_node_1)
-    ld.add_action(camera_node_2)
-    ld.add_action(system_check_ack_node)
-    ld.add_action(bridge_node)
-    ld.add_action(rf2o_laser_odometry_node)
-    ld.add_action(robot_localization_node)
-    ld.add_action(slam_toolbox_launch_file)
-    ld.add_action(nav2_launch_file)
-    ld.add_action(foxglove_server)
-    ld.add_action(ai_node)
-    ld.add_action(arm_hardware_launch)
-    ld.add_action(arm_moveit_launch)
+    # # Add the nodes (they will only be executed if their condition is met)
+    # ld.add_action(robot_state_publisher_node)
+    # ld.add_action(lidar_node)
+    # ld.add_action(camera_node_1)
+    # ld.add_action(camera_node_2)
+    # ld.add_action(system_check_ack_node)
+    # ld.add_action(bridge_node)
+    # ld.add_action(rf2o_laser_odometry_node)
+    # ld.add_action(robot_localization_node)
+    # # ld.add_action(foxglove_server)
+    # ld.add_action(ai_node)
+    # ld.add_action(arm_hardware_launch)
+    # ld.add_action(arm_moveit_launch)
+    # # ld.add_action(slam_toolbox_launch_file)
+    # ld.add_action(delay_nav2_launch_after_moveit)
 
-    return ld
+
+    return LaunchDescription(args + nodes)

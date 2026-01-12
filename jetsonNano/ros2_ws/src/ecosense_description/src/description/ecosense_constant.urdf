@@ -58,14 +58,29 @@
     <xacro:property name="ultrasonic_back_right_yoff" value="-0.10"/>
     <xacro:property name="ultrasonic_back_right_zoff" value="0.0"/>
 
-    <!-- Camera Left (Need remeasure) -->
-    <xacro:property name="camera_left_xoff" value="0.0"/>
-    <xacro:property name="camera_left_yoff" value="0.0"/>
-    <xacro:property name="camera_left_zoff" value="0.0"/>
+    <!-- Camera Left (WITH RESPECT TO BASE) -->
+    <xacro:property name="camera_left_xoff" value="0.30"/>
+    <xacro:property name="camera_left_yoff" value="0.07"/>
+    <xacro:property name="camera_left_zoff" value="0.25"/>
+    <xacro:property name="camera_left_rotx" value="-1.57079632679"/>
+    <xacro:property name="camera_left_roty" value="0.0"/>
+    <xacro:property name="camera_left_rotz" value="-1.57079632679"/>
 
-    <!-- Camera Right (Need remeasure) -->
-    <xacro:property name="camera_right_xoff" value="0.0"/>
-    <xacro:property name="camera_right_yoff" value="0.0"/>
-    <xacro:property name="camera_right_zoff" value="0.0"/>
+    <!-- Camera Right (WITH RESPECT TO CAMERA LEFT) -->
+    <!-- Calibration data from calib_01 (see GGDrive/Calibration)-->
+    
+    <xacro:property name="camera_right_xoff" value="0.16062348"/>
+    <xacro:property name="camera_right_yoff" value="0.02248679"/>
+    <xacro:property name="camera_right_zoff" value="-0.0086817"/>
+    <xacro:property name="camera_right_rotx" value="0.1126837961614861"/>
+    <xacro:property name="camera_right_roty" value="-0.01485969373342217"/>
+    <xacro:property name="camera_right_rotz" value="0.08525175128691662"/>
 
+    <!-- LD Lidar -->
+    <xacro:property name="ld_lidar_xoff" value="0.68"/>
+    <xacro:property name="ld_lidar_yoff" value="0.0"/>
+    <xacro:property name="ld_lidar_zoff" value="0.0"/>
+    <xacro:property name="ld_lidar_rotx" value="0.0"/>
+    <xacro:property name="ld_lidar_roty" value="0.0"/>
+    <xacro:property name="ld_lidar_rotz" value="${-pi/2}"/>
 </robot>   

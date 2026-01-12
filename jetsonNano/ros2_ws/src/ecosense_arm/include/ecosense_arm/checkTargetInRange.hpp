@@ -90,6 +90,6 @@ class CheckTargetInRange : public StatefulActionNode {
         std::unique_ptr<tf2_ros::Buffer> tf_target_buffer_;
         std::shared_ptr<tf2_ros::TransformListener> tf_target_listener_{nullptr};
 
-        const double ARM_MAX_RANGE = 0.30; // 30 cm
-        const double ARM_MIN_RANGE = 0.20; // 20 cm
+        const double ARM_MAX_RANGE = 0.41;
+        const double ARM_MIN_RANGE = 0.29;
 };

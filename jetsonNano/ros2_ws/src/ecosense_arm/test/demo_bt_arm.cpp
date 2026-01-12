@@ -86,7 +86,7 @@ class BehaviorTreeExecutor : public rclcpp::Node {
         std::shared_ptr<BT::StdCoutLogger> cout_logger_;
 
         /**
-         * @brief Thimer to syncronisly tick the behavior tree
+         * @brief Timer to synchronously tick the behavior tree
          */
         rclcpp::TimerBase::SharedPtr timer_bt_tick_;
 
@@ -104,6 +104,13 @@ class MockTargetBroadcaster : public rclcpp::Node {
         MockTargetBroadcaster(rclcpp::NodeOptions options) : rclcpp::Node("mock_target_broadcaster", options) 
         {
             tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(this);
+
+            // Parameters
+            this->declare_parameter<bool>("broadcast_target_tf", false);
+            this->declare_parameter<double>("target_x", 0.42);
+            this->declare_parameter<double>("target_y", -0.1);
+            this->declare_parameter<double>("target_z", 0.05);
+
             timer_broadcast_ = create_wall_timer(
                 std::chrono::milliseconds(200),
                 std::bind(&MockTargetBroadcaster::broadcastTarget, this));
@@ -112,24 +119,35 @@ class MockTargetBroadcaster : public rclcpp::Node {
         void broadcastTarget() {
             geometry_msgs::msg::TransformStamped transformStamped;
             geometry_msgs::msg::Point target_point;
-            double x = 0.25;
-            double y = 0.1;
-            double z = -0.2;
-            target_point.x = x;
-            target_point.y = y;
-            target_point.z = z;
+
+            broadcastTargetTF_ = this->get_parameter("broadcast_target_tf").as_bool();
+            target_x = this->get_parameter("target_x").as_double();
+            target_y = this->get_parameter("target_y").as_double();
+            target_z = this->get_parameter("target_z").as_double();
+
+            if (!broadcastTargetTF_) {
+                return;
+            }
+            target_point.x = target_x;
+            target_point.y = target_y;
+            target_point.z = target_z;
             transformStamped.header.stamp = this->get_clock()->now();
             transformStamped.header.frame_id = "Arm_Base";
             transformStamped.child_frame_id = "target_trash";
-            transformStamped.transform.translation.x = x;
-            transformStamped.transform.translation.y = y;
-            transformStamped.transform.translation.z = z;
+            transformStamped.transform.translation.x = target_x;
+            transformStamped.transform.translation.y = target_y;
+            transformStamped.transform.translation.z = target_z;
 
             tf_broadcaster_->sendTransform(transformStamped);
         }
 
         std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
         rclcpp::TimerBase::SharedPtr timer_broadcast_;
+
+        bool broadcastTargetTF_ = true;
+        double target_x = 0.0;
+        double target_y = 0.0;
+        double target_z = 0.0;
 };
 
 int main(int argc, char* argv[]) {

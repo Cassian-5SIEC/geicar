@@ -4,7 +4,9 @@
     <BehaviorTree ID="main">
         <Delay delay_msec="3000">
             <Sequence>
-                <CheckTargetInRange   name="check_target_in_range"/>
+                <!-- <ForceSuccess> -->
+                    <CheckTargetInRange   name="check_target_in_range"/>
+                <!-- </ForceSuccess> -->
                 <Fallback>
                     <ExecutePickPlace   name="pick_place_action"/>
                     <RetractArm   name="retract_arm_action"/>
