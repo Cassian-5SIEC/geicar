@@ -16,6 +16,8 @@
 using json = nlohmann::json;
 using std::placeholders::_1;
 
+#define DISABLE_MAP_ROTATION
+
 TcpUdpBridgeNode::TcpUdpBridgeNode()
 : Node("tcp_udp_bridge"),
   image_packet_buffer_(HEADER_SIZE + IMAGE_PACKET_PAYLOAD_SIZE) // Pre-allocate buffer
@@ -226,8 +228,13 @@ void TcpUdpBridgeNode::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPt
     double map_origin_x = msg->info.origin.position.x;
     double map_origin_y = msg->info.origin.position.y;
 
+    #ifdef DISABLE_MAP_ROTATION
+    double cos_yaw = 1;
+    double sin_yaw = 0;
+    #else
     double cos_yaw = cos(car_yaw);
     double sin_yaw = sin(car_yaw);
+    #endif
 
     // 3. Iterate over output pixels and sample from original map
     for (int y = 0; y < OUTPUT_SIZE; ++y) {
@@ -301,7 +308,7 @@ void TcpUdpBridgeNode::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPt
         {"width", OUTPUT_SIZE},
         {"height", OUTPUT_SIZE},
         {"resolution", OUTPUT_RES},
-        {"origin_position_x", 0.0}, // Local map, origin relative to car? Not quite.
+        //{"origin_position_x", 0.0}, // Local map, origin relative to car? Not quite.
         // Actually, the client probably expects standard map origin logic.
         // But since we are streaming a "live" view centered on the car, the origin changes every frame.
         // If we say origin is (0,0), the client might draw it fixed.
@@ -309,12 +316,13 @@ void TcpUdpBridgeNode::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPt
         // Let's provide 0s for origin and let the client just draw this image as a HUD element or centered map.
         // Or we pass the car position? 
         // For "crop the map around the car", usually it's for a minimap HUD.
-        {"origin_position_y", 0.0},
-        {"origin_position_z", 0.0},
-        {"origin_orientation_x", 0.0},
-        {"origin_orientation_y", 0.0},
-        {"origin_orientation_z", 0.0},
-        {"origin_orientation_w", 1.0},
+        //{"origin_position_y", 0.0},
+        //{"origin_position_z", 0.0},
+        //{"origin_orientation_x", 0.0},
+        //{"origin_orientation_y", 0.0},
+        //{"origin_orientation_z", 0.0},
+        //{"origin_orientation_w", 1.0},
+        {"car_yaw", car_yaw},
         {"data", rotated_map}
     };
 
