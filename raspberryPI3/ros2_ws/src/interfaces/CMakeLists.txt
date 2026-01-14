@@ -22,6 +22,7 @@ set(msg_files
   "msg/Gnss.msg"
   "msg/SystemCheck.msg"
   "msg/Control.msg"
+  "msg/EmergencyStopRequest.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

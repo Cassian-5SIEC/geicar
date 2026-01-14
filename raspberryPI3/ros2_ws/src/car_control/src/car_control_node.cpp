@@ -46,6 +46,10 @@ public:
 
         publisher_can_= this->create_publisher<interfaces::msg::MotorsOrder>("motors_order", 10);
 
+
+        emergency_subscriber_ = this->create_subscription<interfaces::msg::EmergencyStopRequest>(
+            "emergency_stop_request", 10, std::bind(&car_control::emergency_callback, this, _1));
+
         subscription_joystick_order_ = this->create_subscription<interfaces::msg::JoystickOrder>(
         "joystick_order", 10, std::bind(&car_control::joystickOrderCallback, this, _1));
 
@@ -109,6 +113,13 @@ private:
             requestedThrottle = joyOrder->throttle;
             requestedSteerAngle = joyOrder->steer;
             reverse = joyOrder->reverse;
+        }
+    }
+
+    void emergency_callback(const interfaces::msg::EmergencyStopRequest::SharedPtr emergencyStopRequest) {        
+        if (emergencyStopRequest->stop_avant) {
+            stop = true;
+            RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Emergency stop requested");
         }
     }
 
@@ -238,6 +249,7 @@ private:
     rclcpp::Subscription<interfaces::msg::Control>::SharedPtr subscription_control_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_speed_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_steering_;
+    rclcpp::Subscription<interfaces::msg::EmergencyStopRequest>::SharedPtr emergency_subscriber_;
 
     //Timer
     rclcpp::TimerBase::SharedPtr timer_;
