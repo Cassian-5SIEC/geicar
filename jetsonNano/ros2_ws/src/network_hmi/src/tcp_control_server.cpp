@@ -172,11 +172,11 @@ void TcpControlServer::handle_control_message(const interfaces::msg::Control::Sh
         }
 
         for (auto& session : sessions_copy) {
-            nlohmann::json json_msg = {
-                // TODO: fill in message
-            };
+            nlohmann::json json_msg;
             
-            if (msg->command == "start") {
+            if (msg->command == "ask-pickup") {
+                 json_msg["type"] = "ask-pickup";
+            } else if (msg->command == "start") {
                 json_msg["type"] = "cmd";
                 json_msg["cmd"] = "start";
             } else if (msg->command == "stop") {

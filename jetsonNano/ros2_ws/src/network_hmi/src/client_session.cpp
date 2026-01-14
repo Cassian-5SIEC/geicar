@@ -121,6 +121,7 @@ void ClientSession::handle_message(const nlohmann::json& msg)
     else if (type == "close") on_close();
     else if (type == "start") on_start();
     else if (type == "set_mode") on_set_mode(msg);
+    else if (type == "response-pickup") on_response_pickup(msg);
     else if (type == "heartbeat_ack") on_heartbeat_ack();
     else {
         RCLCPP_WARN(logger_, "Unknown TCP message type: %s", type.c_str());
@@ -226,6 +227,22 @@ void ClientSession::on_heartbeat_ack()
         std::chrono::steady_clock::now().time_since_epoch()).count();
     long long rtt_ms = now - last_heartbeat_ms_.load();
     RCLCPP_INFO(logger_, "Heartbeat RTT: %lld ms", rtt_ms);
+}
+
+void ClientSession::on_response_pickup(const nlohmann::json& msg)
+{
+    bool response = msg.value("response", false);
+    RCLCPP_INFO(logger_, "Pickup response received: %s", response ? "YES" : "NO");
+
+    interfaces::msg::Control control_msg;
+    control_msg.sender = "network_hmi"; // Standard sender
+    if (response) {
+        control_msg.command = "accept-pickup";
+    } else {
+        control_msg.command = "refuse-pickup";
+    }
+
+    tcp_server_->send_control_message(control_msg);
 }
 
 // --- Networking Helpers ---

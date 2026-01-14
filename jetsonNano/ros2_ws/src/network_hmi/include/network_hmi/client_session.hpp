@@ -46,6 +46,7 @@ private:
     void on_start();
     void on_set_mode(const nlohmann::json& msg);
     void on_heartbeat_ack();
+    void on_response_pickup(const nlohmann::json& msg);
 
     rclcpp::Logger logger_;
     int socket_;
