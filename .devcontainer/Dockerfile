@@ -44,6 +44,11 @@ RUN echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> /home/$USERNAME/.bash
 ##############################
 # Add ant custom setup below #
 ##############################
+# Network configuration for CycloneDDS
+# RUN echo "export CYCLONEDDS_URI='/home/$USERNAME/geicar/.cyclonedds.xml'" >> /home/$USERNAME/.bashrc
+# RUN sudo cp /home/$USERNAME/geicar/10-cyclone-max.conf /etc/sysctl.d/10-cyclone-max.conf
+# RUN sudo sysctl --system
 # Source the Colcon setup file
 RUN echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> /home/$USERNAME/.bashrc
+RUN echo "alias sjs='source /home/$USERNAME/geicar/jetsonNano/ros2_ws/install/setup.bash'" >> /home/$USERNAME/.bashrc
 
