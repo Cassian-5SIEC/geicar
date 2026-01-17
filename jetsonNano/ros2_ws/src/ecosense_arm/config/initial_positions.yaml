@@ -5,5 +5,5 @@ initial_positions:
   Gripper: 0
   Shoulder_Pitch: -1.6836
   Shoulder_Rotation: 0.0
-  Wrist_Pitch: -0.3645
+  Wrist_Pitch: -1.0
   Wrist_Roll: 0
