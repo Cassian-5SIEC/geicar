@@ -8,7 +8,7 @@ joints:
   Elbow:
       pos: 1.51
   Wrist_Pitch:
-      pos: -0.3645
+      pos: -1.0
   Wrist_Roll:
       pos: 0.0
   Gripper:

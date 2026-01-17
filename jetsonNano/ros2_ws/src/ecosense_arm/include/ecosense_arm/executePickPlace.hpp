@@ -27,6 +27,10 @@ class ExecutePickPlace : public StatefulActionNode {
             gripper_group_ = std::make_shared<MoveGroupInterface>(node_, "gripper");
             arm_group_->setPoseReferenceFrame("Arm_Base");
             gripper_group_->setPoseReferenceFrame("Arm_Base");
+            arm_group_->setMaxVelocityScalingFactor(1.0);
+            arm_group_->setMaxAccelerationScalingFactor(1.0);
+            gripper_group_->setMaxVelocityScalingFactor(1.0);
+            gripper_group_->setMaxAccelerationScalingFactor(1.0);
             // Initialize TF2 buffer and listener
             tf_target_buffer_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock());
             tf_target_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_target_buffer_);
@@ -100,8 +104,8 @@ class ExecutePickPlace : public StatefulActionNode {
                 return;
             }
 
-            moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-            if (arm_group_->plan(my_plan) != moveit::core::MoveItErrorCode::SUCCESS){
+            moveit::planning_interface::MoveGroupInterface::Plan my_plan_ready;
+            if (arm_group_->plan(my_plan_ready) != moveit::core::MoveItErrorCode::SUCCESS){
                 RCLCPP_WARN(node_->get_logger(), "Failed to plan to ready pose.");
                 execSuccess = false;
                 isRunning = false;
@@ -109,21 +113,12 @@ class ExecutePickPlace : public StatefulActionNode {
             }
 
             // Execute plan to ready pose
-            if (arm_group_->execute(my_plan) != moveit::core::MoveItErrorCode::SUCCESS){
+            if (arm_group_->execute(my_plan_ready) != moveit::core::MoveItErrorCode::SUCCESS){
                 RCLCPP_WARN(node_->get_logger(), "Failed to execute plan to ready pose.");
                 execSuccess = false;
                 isRunning = false;
                 return;
             }
-
-            // Move to ready pose
-            // arm_group_->setPoseTarget(ready_pose.pose);
-            // if (arm_group_->move() != moveit::core::MoveItErrorCode::SUCCESS) {
-            //     RCLCPP_WARN(node_->get_logger(), "Failed to move to ready pose.");
-            //     execSuccess = false;
-            //     isRunning = false;
-            //     return;
-            // }
 
             gripper_group_->setNamedTarget("open_gripper");
             gripper_group_->move();
@@ -147,6 +142,29 @@ class ExecutePickPlace : public StatefulActionNode {
             gripper_group_->setNamedTarget("close_gripper");
             gripper_group_->move();
 
+            // Compute lift pose
+            if (setLiftPose() == -1) {
+                RCLCPP_WARN(node_->get_logger(), "Failed to compute lift pose.");
+                execSuccess = false;
+                isRunning = false;
+                return;
+            }
+
+            moveit::planning_interface::MoveGroupInterface::Plan my_plan_lift;
+            if (arm_group_->plan(my_plan_lift) != moveit::core::MoveItErrorCode::SUCCESS){
+                RCLCPP_WARN(node_->get_logger(), "Failed to plan to lift pose.");
+                execSuccess = false;
+                isRunning = false;
+                return;
+            }
+
+            // Execute plan to lift pose
+            if (arm_group_->execute(my_plan_lift) != moveit::core::MoveItErrorCode::SUCCESS){
+                RCLCPP_WARN(node_->get_logger(), "Failed to execute plan to lift pose.");
+                execSuccess = false;
+                isRunning = false;
+                return;
+            }
             // Move to dropping pose
             arm_group_->setNamedTarget("dropping");
             if (arm_group_->move() != moveit::core::MoveItErrorCode::SUCCESS) {
@@ -212,9 +230,34 @@ class ExecutePickPlace : public StatefulActionNode {
                 return -1;
             }
             // Compute angle from Arm_Base origin to target in XY plane
+            pose.pose.position.y += gripper_asym_offset_; // Adjust for gripper asymmetry
             double target_angle = atan2(pose.pose.position.y, pose.pose.position.x);
             // Get default ready pose
             std::map<std::string, double> target_joints = arm_group_->getNamedTargetValues("default_pickup_ready");
+            target_joints["Shoulder_Rotation"] = target_angle;
+            arm_group_->setJointValueTarget(target_joints);
+            return 0;
+        }
+
+        int setLiftPose(){
+            geometry_msgs::msg::PoseStamped pose = geometry_msgs::msg::PoseStamped();
+            // Set target pose at the origin of the "target_trash" frame
+            pose.header.frame_id = "target_trash";  
+            pose.header.stamp = rclcpp::Time(0);
+            pose.pose.orientation.w = 1.0;
+            
+            try {
+                // Transform the target pose to the Arm_Base frame using TF2
+                pose = tf_target_buffer_->transform(pose, "Arm_Base");
+            } catch (tf2::TransformException &ex) {
+                RCLCPP_WARN(node_->get_logger(), "Could not transform pose: %s", ex.what());
+                return -1;
+            }
+            // Compute angle from Arm_Base origin to target in XY plane
+            pose.pose.position.y += gripper_asym_offset_; // Adjust for gripper asymmetry
+            double target_angle = atan2(pose.pose.position.y, pose.pose.position.x);
+            // Get default ready pose
+            std::map<std::string, double> target_joints = arm_group_->getNamedTargetValues("dropping");
             target_joints["Shoulder_Rotation"] = target_angle;
             arm_group_->setJointValueTarget(target_joints);
             return 0;
@@ -231,7 +274,7 @@ class ExecutePickPlace : public StatefulActionNode {
                 // Transform the target pose to the Shoulder_Rotation_Pitch frame using TF2
                 pose = tf_target_buffer_->transform(pose, "Shoulder_Rotation_Pitch");
                 // Turn Gripper slighly to the left to account for gripper unsymetrical 
-                pose.pose.position.x += gripper_asym_offset_;
+                pose.pose.position.x += gripper_asym_offset_ - 0.01;
                 // Rotate to point Y axis to origin of Shoulder_Rotation_Pitch (lack of 1 DOF)
                 pose.pose.orientation = rotateYToOrigin(pose.pose.position);
                 // Back off along the approach vector by standoff_dist
@@ -322,6 +365,6 @@ class ExecutePickPlace : public StatefulActionNode {
         std::shared_ptr<tf2_ros::TransformListener> tf_target_listener_{nullptr};
 
         // Constants
-        const double gripper_asym_offset_ = 0.04;   // Meters
-        const double gripper_approach_offset_ = 0.04; // Meters
+        const double gripper_asym_offset_ = 0.035;       // Meters
+        const double gripper_approach_offset_ = 0.04;   // Meters
 };
