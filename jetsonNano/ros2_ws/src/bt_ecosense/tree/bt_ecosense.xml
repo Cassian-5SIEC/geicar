@@ -2,23 +2,25 @@
 <root BTCPP_format="4"
       main_tree_to_execute="main">
     <BehaviorTree ID="main">
-        <Delay delay_msec="3000">
-            <Sequence>
-                <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
-                <CheckTargetInRange   name="check_target_in_range"/>
-                <Fallback>
-                    <ExecutePickPlace   name="pick_place_action"/>
-                    <RetractArm   name="retract_arm_action"/>
-                </Fallback>
-                <TrashLocalizationService service_name="/trash_localization_node/clear_target_tf"/>
-            </Sequence>
-        </Delay>
+        <Sequence>
+            <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+            <CheckTargetInRange   name="check_target_in_range"/>
+            <SetVel linear_x="0.0" angular_z="0.0" topic_name="/cmd_vel" name="stop_robot"/>
+            <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+            <CheckTargetInRange   name="check_target_in_range"/>
+            <Fallback>
+                <ExecutePickPlace   name="pick_place_action"/>
+                <RetractArm   name="retract_arm_action"/>
+            </Fallback>
+            <TrashLocalizationService service_name="/trash_localization_node/clear_target_tf"/>
+        </Sequence>
     </BehaviorTree>
 
     <!-- Description of Node Models (used by Groot) -->
     <TreeNodesModel>
         <Action ID="TrashLocalizationService"
                 editable="true">
+                <input_port name="service_name"/>
         </Action>
         <Action ID="ExecutePickPlace"
                 editable="true">
@@ -28,6 +30,12 @@
         </Action>
         <Action ID="RetractArm"
                 editable="true">
+        </Action>
+        <Action ID="SetVel"
+                editable="true">
+                <input_port name="linear_x"/>
+                <input_port name="angular_z"/>
+                <input_port name="topic_name"/>
         </Action>
     </TreeNodesModel>
 

@@ -32,10 +32,12 @@ class BehaviorTreeExecutor : public rclcpp::Node {
             factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
             // Register Nodes
+            factory_->registerNodeType<SetVel>("SetVel", node);
             factory_->registerNodeType<TrashLocalizationService>("TrashLocalizationService", node);
             factory_->registerNodeType<ExecutePickPlace>("ExecutePickPlace", node);
             factory_->registerNodeType<CheckTargetInRange>("CheckTargetInRange", node);
             factory_->registerNodeType<RetractArm>("RetractArm", node);
+
             // Register Behavior Trees
             for (auto const& entry :
                 std::filesystem::directory_iterator(tree_folder_path_)) {
