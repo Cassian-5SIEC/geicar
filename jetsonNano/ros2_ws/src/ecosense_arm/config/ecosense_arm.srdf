@@ -39,7 +39,7 @@
         <joint name="Gripper" value="0"/>
     </group_state>
     <group_state name="open_gripper" group="gripper">
-        <joint name="Gripper" value="0.781"/>
+        <joint name="Gripper" value="1.0"/>
     </group_state>
     <group_state name="default_pickup_ready" group="arm">
         <joint name="Shoulder_Rotation" value="0.0"/>

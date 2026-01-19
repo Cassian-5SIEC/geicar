@@ -131,6 +131,8 @@ class ExecutePickPlace : public StatefulActionNode {
                 return;
             }
             // Move to target pose
+            arm_group_->setMaxVelocityScalingFactor(0.5);
+            arm_group_->setMaxAccelerationScalingFactor(0.5);
             arm_group_->setPoseTarget(target_pose.pose);
             if (arm_group_->move() != moveit::core::MoveItErrorCode::SUCCESS) {
                 RCLCPP_WARN(node_->get_logger(), "Failed to move to target pose.");
@@ -203,7 +205,7 @@ class ExecutePickPlace : public StatefulActionNode {
         //         // Transform the target pose to the Shoulder_Rotation_Pitch frame using TF2
         //         pose = tf_target_buffer_->transform(pose, "Shoulder_Rotation_Pitch");
         //         // Turn Gripper slighly to the left to account for gripper unsymetrical 
-        //         pose.pose.position.x += gripper_asym_offset_;
+        //         pose.pose.position.x += gripper_asym_offset_angle_;
         //         // Rotate to point Y axis to origin of Shoulder_Rotation_Pitch (lack of 1 DOF)
         //         pose.pose.orientation = rotateYToOrigin(pose.pose.position);
         //         // Transform the pose to the Arm_Base frame
@@ -223,19 +225,21 @@ class ExecutePickPlace : public StatefulActionNode {
             pose.pose.orientation.w = 1.0;
             
             try {
-                // Transform the target pose to the Arm_Base frame using TF2
-                pose = tf_target_buffer_->transform(pose, "Arm_Base");
+                // Transform the target pose to the Shoulder_Rotation_Pitch frame using TF2
+                pose = tf_target_buffer_->transform(pose, "Shoulder_Rotation_Pitch");
+
+                // Compute angle from Shoulder_Rotation_Pitch origin to target in XY plane
+                // pose = applyGripperAsymOffset(pose);
+                double target_angle = atan2(pose.pose.position.x, pose.pose.position.z);
+                // Get default ready pose
+                std::map<std::string, double> target_joints = arm_group_->getNamedTargetValues("default_pickup_ready");
+                target_joints["Shoulder_Rotation"] = target_angle + gripper_asym_offset_angle_;
+                arm_group_->setJointValueTarget(target_joints);
             } catch (tf2::TransformException &ex) {
                 RCLCPP_WARN(node_->get_logger(), "Could not transform pose: %s", ex.what());
                 return -1;
             }
-            // Compute angle from Arm_Base origin to target in XY plane
-            pose.pose.position.y += gripper_asym_offset_; // Adjust for gripper asymmetry
-            double target_angle = atan2(pose.pose.position.y, pose.pose.position.x);
-            // Get default ready pose
-            std::map<std::string, double> target_joints = arm_group_->getNamedTargetValues("default_pickup_ready");
-            target_joints["Shoulder_Rotation"] = target_angle;
-            arm_group_->setJointValueTarget(target_joints);
+
             return 0;
         }
 
@@ -249,17 +253,17 @@ class ExecutePickPlace : public StatefulActionNode {
             try {
                 // Transform the target pose to the Arm_Base frame using TF2
                 pose = tf_target_buffer_->transform(pose, "Arm_Base");
+                // Compute angle from Arm_Base origin to target in XY plane
+                // pose = applyGripperAsymOffset(pose);
+                double target_angle = atan2(pose.pose.position.y, pose.pose.position.x);
+                // Get default ready pose
+                std::map<std::string, double> target_joints = arm_group_->getNamedTargetValues("dropping");
+                target_joints["Shoulder_Rotation"] = target_angle + gripper_asym_offset_angle_;
+                arm_group_->setJointValueTarget(target_joints);
             } catch (tf2::TransformException &ex) {
                 RCLCPP_WARN(node_->get_logger(), "Could not transform pose: %s", ex.what());
                 return -1;
             }
-            // Compute angle from Arm_Base origin to target in XY plane
-            pose.pose.position.y += gripper_asym_offset_; // Adjust for gripper asymmetry
-            double target_angle = atan2(pose.pose.position.y, pose.pose.position.x);
-            // Get default ready pose
-            std::map<std::string, double> target_joints = arm_group_->getNamedTargetValues("dropping");
-            target_joints["Shoulder_Rotation"] = target_angle;
-            arm_group_->setJointValueTarget(target_joints);
             return 0;
         }
 
@@ -271,11 +275,14 @@ class ExecutePickPlace : public StatefulActionNode {
             pose.pose.orientation.w = 1.0;
             
             try {
+                // Turn Gripper slighly to the left to account for gripper unsymetrical 
+                pose = tf_target_buffer_->transform(pose, "Arm_Base");
+                pose = applyGripperAsymOffset(pose);
+
+                // Rotate to point Y axis to origin of Shoulder_Rotation_Pitch (lack of 1 DOF)
                 // Transform the target pose to the Shoulder_Rotation_Pitch frame using TF2
                 pose = tf_target_buffer_->transform(pose, "Shoulder_Rotation_Pitch");
-                // Turn Gripper slighly to the left to account for gripper unsymetrical 
-                pose.pose.position.x += gripper_asym_offset_ - 0.01;
-                // Rotate to point Y axis to origin of Shoulder_Rotation_Pitch (lack of 1 DOF)
+
                 pose.pose.orientation = rotateYToOrigin(pose.pose.position);
                 // Back off along the approach vector by standoff_dist
                 double dz = pose.pose.position.z;
@@ -340,6 +347,24 @@ class ExecutePickPlace : public StatefulActionNode {
             return atan2(target_pose.pose.position.y, target_pose.pose.position.x);
         }
 
+        /**
+         * @brief Adjusts the input pose to account for the gripper's asymmetrical offset by rotating the target to the left.
+         * @param input_pose The original pose to be adjusted in the Arm_Base frame.
+         * @return The adjusted pose with the gripper asymmetry accounted for.
+         */
+        geometry_msgs::msg::PoseStamped applyGripperAsymOffset(const geometry_msgs::msg::PoseStamped& input_pose) {
+            geometry_msgs::msg::PoseStamped adjusted_pose = input_pose;
+            double distance = std::sqrt(
+                input_pose.pose.position.x * input_pose.pose.position.x +
+                input_pose.pose.position.y * input_pose.pose.position.y
+            );
+            double angle = std::atan2(input_pose.pose.position.y, input_pose.pose.position.x);
+            angle += gripper_asym_offset_angle_;
+            adjusted_pose.pose.position.x = distance * std::cos(angle);
+            adjusted_pose.pose.position.y = distance * std::sin(angle);
+            return adjusted_pose;
+        }
+
         geometry_msgs::msg::Quaternion rotateYToOrigin(const geometry_msgs::msg::Point& target_point)
         {
             // Calculate the angle of the vector FROM origin of Shoulder_Rotation_Pitch TO target_point
@@ -365,6 +390,6 @@ class ExecutePickPlace : public StatefulActionNode {
         std::shared_ptr<tf2_ros::TransformListener> tf_target_listener_{nullptr};
 
         // Constants
-        const double gripper_asym_offset_ = 0.035;       // Meters
-        const double gripper_approach_offset_ = 0.04;   // Meters
+        const double gripper_asym_offset_angle_ = 0.22;       // Rads
+        const double gripper_approach_offset_ = 0.01;   // Meters
 };

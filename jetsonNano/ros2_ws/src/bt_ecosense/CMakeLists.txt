@@ -11,6 +11,7 @@ find_package(std_srvs REQUIRED)
 find_package(behaviortree_ros2 REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(ecosense_arm REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 # Add the Executable
 add_executable(bt_ecosense_node src/bt_ecosense.cpp)
@@ -32,6 +33,7 @@ ament_target_dependencies(bt_ecosense_node
   behaviortree_ros2
   ecosense_arm
   std_srvs
+  geometry_msgs
 )
 
 install(
