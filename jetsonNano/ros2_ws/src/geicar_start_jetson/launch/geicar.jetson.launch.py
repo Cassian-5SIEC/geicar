@@ -218,7 +218,7 @@ def generate_launch_description():
             launch_arguments={
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'params_file': os.path.join(pkg_share, 'config', 'nav2_mppi.yaml'),
-                'map': os.path.join(pkg_share, 'maps', 'gei_rdc_v2.yaml')
+                'map': os.path.join(pkg_share, 'maps', 'map_gei_213.yaml')
             }.items(),
             condition=UnlessCondition(LaunchConfiguration('disable_nav2')),
     )
