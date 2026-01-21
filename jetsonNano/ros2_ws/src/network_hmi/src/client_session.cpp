@@ -170,6 +170,7 @@ void ClientSession::on_emergency_stop()
     RCLCPP_WARN(logger_, "Emergency stop received!");
     vehicle_state_->emergency_stop();
     interfaces::msg::Control control_msg;
+    control_msg.header.stamp = tcp_server_->get_clock()->now();
     control_msg.command = "stop";
     control_msg.sender = "network_hmi";
     tcp_server_->send_control_message(control_msg);
@@ -190,6 +191,7 @@ void ClientSession::on_start()
     RCLCPP_INFO(logger_, "Start command received");
     vehicle_state_->set_start(true);
     interfaces::msg::Control control_msg;
+    control_msg.header.stamp = tcp_server_->get_clock()->now();
     control_msg.command = "start";
     control_msg.sender = "network_hmi";
     tcp_server_->send_control_message(control_msg);
@@ -216,6 +218,7 @@ void ClientSession::on_set_mode(const nlohmann::json& msg)
         return;
     }
     control_msg.sender = "network_hmi";
+    control_msg.header.stamp = tcp_server_->get_clock()->now();
     tcp_server_->send_control_message(control_msg);
     json response = {{"ok", true}, {"message", "Mode change acknowledged"}};
     send_tcp_message(response.dump());
@@ -235,6 +238,7 @@ void ClientSession::on_response_pickup(const nlohmann::json& msg)
     RCLCPP_INFO(logger_, "Pickup response received: %s", response ? "YES" : "NO");
 
     interfaces::msg::Control control_msg;
+    control_msg.header.stamp = tcp_server_->get_clock()->now();
     control_msg.sender = "network_hmi"; // Standard sender
     if (response) {
         control_msg.command = "accept-pickup";
@@ -243,6 +247,7 @@ void ClientSession::on_response_pickup(const nlohmann::json& msg)
     }
 
     tcp_server_->send_control_message(control_msg);
+    tcp_server_->send_trash_response(control_msg);
 }
 
 // --- Networking Helpers ---

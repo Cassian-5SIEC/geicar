@@ -17,9 +17,11 @@ TcpControlServer::TcpControlServer(
   port_(port),
   client_info_(client_info),
   vehicle_state_(vehicle_state),
-  control_topic_(control_topic)
+  control_topic_(control_topic),
+  clock_(node->get_clock())
 {
     control_pub_ = node->create_publisher<interfaces::msg::Control>(control_topic_, 1);
+    trash_response_pub_ = node->create_publisher<interfaces::msg::Control>("trash_response", 1);
     control_sub_ = node->create_subscription<interfaces::msg::Control>(control_topic_, 1, std::bind(&TcpControlServer::handle_control_message, this, std::placeholders::_1));
 }
 
@@ -158,6 +160,16 @@ void TcpControlServer::remove_client_session(int socket)
 void TcpControlServer::send_control_message(const interfaces::msg::Control & msg)
 {
     control_pub_->publish(msg);
+}
+
+void TcpControlServer::send_trash_response(const interfaces::msg::Control & msg)
+{
+    trash_response_pub_->publish(msg);
+}
+
+rclcpp::Clock::SharedPtr TcpControlServer::get_clock()
+{
+    return clock_;
 }
 
 void TcpControlServer::handle_control_message(const interfaces::msg::Control::SharedPtr msg)
