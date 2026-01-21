@@ -176,6 +176,8 @@ void TcpControlServer::handle_control_message(const interfaces::msg::Control::Sh
             
             if (msg->command == "ask-pickup") {
                  json_msg["type"] = "ask-pickup";
+            } else if (msg->command == "trash-detected") {
+                json_msg["type"] = "trash-detected";
             } else if (msg->command == "start") {
                 json_msg["type"] = "cmd";
                 json_msg["cmd"] = "start";
