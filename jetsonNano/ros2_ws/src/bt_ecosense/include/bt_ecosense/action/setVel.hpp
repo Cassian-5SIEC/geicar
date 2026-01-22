@@ -21,18 +21,18 @@ class SetVel : public RosTopicPubNode<geometry_msgs::msg::Twist>
 
     bool setMessage(geometry_msgs::msg::Twist& msg) override
     {
-      double linear_x;
-      if (!getInput<double>("linear_x", linear_x)) {
+      Expected<double> linear_x = getInput<double>("linear_x");
+      if (!linear_x) {
         return false;
       }
 
-      double angular_z;
-      if (!getInput<double>("angular_z", angular_z)) {
+      Expected<double> angular_z = getInput<double>("angular_z");
+      if (!angular_z) {
         return false;
       }
 
-      msg.linear.x = linear_x;
-      msg.angular.z = angular_z;
+      msg.linear.x = linear_x.value();
+      msg.angular.z = angular_z.value();
 
       return true;
     }

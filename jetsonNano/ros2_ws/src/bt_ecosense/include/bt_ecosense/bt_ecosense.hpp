@@ -1,2 +1,8 @@
 #include "bt_ecosense/action/trashLocalization.hpp"
 #include "bt_ecosense/action/setVel.hpp"
+#include "bt_ecosense/action/stopRobot.hpp"
+#include "bt_ecosense/action/setGoalOffset.hpp"
+#include "bt_ecosense/action/navToGoal.hpp"
+#include "bt_ecosense/action/sendControlMsg.hpp"
+#include "bt_ecosense/action/checkForControlMsg.hpp"
+#include "bt_ecosense/action/checkForRecentRequest.hpp"

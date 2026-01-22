@@ -2,41 +2,67 @@
 <root BTCPP_format="4"
       main_tree_to_execute="main">
     <BehaviorTree ID="main">
-        <Sequence>
-            <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
-            <CheckTargetInRange   name="check_target_in_range"/>
-            <SetVel linear_x="0.0" angular_z="0.0" topic_name="/cmd_vel" name="stop_robot"/>
-            <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
-            <CheckTargetInRange   name="check_target_in_range"/>
-            <Fallback>
-                <ExecutePickPlace   name="pick_place_action"/>
-                <RetractArm   name="retract_arm_action"/>
-            </Fallback>
-            <TrashLocalizationService service_name="/trash_localization_node/clear_target_tf"/>
-        </Sequence>
-    </BehaviorTree>
+		<Sequence>
+			<TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+			<!-- <ReactiveFallback> -->
+			<CheckTargetInRange name="check_target_in_range"/>
+			<SendControlMsg name="send_trash_detected_msg" topic_name="/control_msg" command="trash-detected"/>
+			<StopRobot name="stop_robot" topic_name="/control_msg"/>
+			<!-- <SetGoalOffset target_frame="trash_target" standoff_distance="0.5" goal_pose="{goal_pose}"/> -->
+			<!-- <NavToGoal goal_pose="{goal_pose}"/> -->
+			<!-- </ReactiveFallback> -->
+			<CheckForRecentRequest name="check_for_recent_request" topic_name="/recent_request_hmi" />
+			<SendControlMsg name="send_stop_msg" topic_name="/control_msg" command="stop"/>
+			<Delay delay_msec="2000">
+        		<TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+      		</Delay>
+			<CheckTargetInRange name="check_target_in_range"/>
+			<Fallback>
+				<ExecutePickPlace name="pick_place_action" gripper_approach_offset_coeff="0.0" gripper_asym_offset_angle="0.16"/>
+				<RetractArm name="retract_arm_action"/>
+			</Fallback>
+			<TrashLocalizationService service_name="/trash_localization_node/clear_target_tf"/>
+		</Sequence>
+	</BehaviorTree>
 
-    <!-- Description of Node Models (used by Groot) -->
-    <TreeNodesModel>
-        <Action ID="TrashLocalizationService"
-                editable="true">
-                <input_port name="service_name"/>
-        </Action>
-        <Action ID="ExecutePickPlace"
-                editable="true">
-        </Action>
-        <Action ID="CheckTargetInRange"
-                editable="true">
-        </Action>
-        <Action ID="RetractArm"
-                editable="true">
-        </Action>
-        <Action ID="SetVel"
-                editable="true">
-                <input_port name="linear_x"/>
-                <input_port name="angular_z"/>
-                <input_port name="topic_name"/>
-        </Action>
-    </TreeNodesModel>
-
+	<!-- Description of Node Models (used by Groot) -->
+	<TreeNodesModel>
+		<Action ID="CheckTargetInRange"
+				editable="true"/>
+		<Action ID="ExecutePickPlace"
+				editable="true">
+			<input_port name="gripper_approach_offset_coeff"/>
+			<input_port name="gripper_asym_offset_angle"/>
+		</Action>
+		<Action ID="RetractArm"
+				editable="true"/>
+		<Action ID="TrashLocalizationService"
+				editable="true">
+			<input_port name="service_name"/>
+		</Action>
+		<Action ID="SetGoalOffset"
+				editable="true">
+			<input_port name="target_frame"/>
+			<input_port name="standoff_distance"/>
+			<output_port name="goal_pose"/>
+		</Action>
+		<Action ID="NavToGoal"
+				editable="true">
+			<input_port name="goal_pose"/>
+		</Action>
+		<Action ID="SendControlMsg"
+				editable="true">
+			<input_port name="topic_name"/>
+			<input_port name="command"/>
+		</Action>
+		<Action ID="CheckForControlMsg"
+				editable="true">
+			<input_port name="topic_name"/>
+			<input_port name="expected_command"/>
+		</Action>
+		<Action ID="CheckForRecentRequest"
+				editable="true">
+			<input_port name="topic_name"/>
+		</Action>
+	</TreeNodesModel>
 </root>

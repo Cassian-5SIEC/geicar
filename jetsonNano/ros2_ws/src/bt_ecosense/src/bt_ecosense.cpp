@@ -33,11 +33,22 @@ class BehaviorTreeExecutor : public rclcpp::Node {
 
             // Register Nodes
             factory_->registerNodeType<SetVel>("SetVel", node);
+            // Navigation related nodes
+            BT::RosNodeParams nav_params;
+            nav_params.nh = node;
+            nav_params.default_port_value = "/navigate_to_pose";                // Action name
+            factory_->registerNodeType<NavToGoal>("NavToGoal", nav_params);
+            factory_->registerNodeType<SetGoalOffset>("SetGoalOffset", node);
+            factory_->registerNodeType<StopRobot>("StopRobot", node);
+            factory_->registerNodeType<SendControlMsg>("SendControlMsg", node);
+            factory_->registerNodeType<CheckForControlMsg>("CheckForControlMsg", node);
+            factory_->registerNodeType<CheckForRecentRequest>("CheckForRecentRequest", node);
+            // Trash localization service
             factory_->registerNodeType<TrashLocalizationService>("TrashLocalizationService", node);
+            // Arm related nodes
             factory_->registerNodeType<ExecutePickPlace>("ExecutePickPlace", node);
             factory_->registerNodeType<CheckTargetInRange>("CheckTargetInRange", node);
             factory_->registerNodeType<RetractArm>("RetractArm", node);
-
             // Register Behavior Trees
             for (auto const& entry :
                 std::filesystem::directory_iterator(tree_folder_path_)) {
