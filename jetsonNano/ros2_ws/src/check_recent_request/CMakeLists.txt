@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(interfaces)
+project(check_recent_request)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -8,29 +8,14 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(builtin_interfaces REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
-set(msg_files
-  "msg/JoystickOrder.msg"
-  "msg/MotorsOrder.msg"
-  "msg/MotorsFeedback.msg"
-  "msg/GeneralData.msg"
-  "msg/SteeringCalibration.msg"
-  "msg/Ultrasonic.msg"
-  "msg/Gnss.msg"
-  "msg/SystemCheck.msg"
-  "msg/Control.msg"
-  "msg/EmergencyStopRequest.msg"
-)
-
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${msg_files}
-  DEPENDENCIES std_msgs
-)
-
-ament_export_dependencies(rosidl_default_runtime)
+add_executable(check_recent_request_node src/check_recent_request_node.cpp)
+ament_target_dependencies(check_recent_request_node rclcpp interfaces std_msgs)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -43,5 +28,9 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+install(TARGETS
+  check_recent_request_node
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

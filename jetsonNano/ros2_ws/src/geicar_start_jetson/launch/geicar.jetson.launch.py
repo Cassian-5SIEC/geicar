@@ -257,8 +257,32 @@ def generate_launch_description():
                 launch_arguments={'robot_urdf_path': urdf_model_path}.items(),
     )
 
+    trash_localization_node = Node(
+        package='trash_localization',
+        executable='trash_localization_node',
+        name='trash_localization_node',
+        output='screen',
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+    )
+
+    behavior_tree_node = Node(
+        package='bt_ecosense',
+        executable='bt_ecosense_node',
+        name='bt_ecosense_node',
+        output='screen',
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+    )
+
+    check_recent_request_node = Node(
+        package='check_recent_request',
+        executable='check_recent_request_node',
+        name='check_recent_request_node',
+        output='screen',
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+    )
+
     delay_nav2_launch = TimerAction(
-        period=5.0,
+        period=7.0,
         actions=[nav2_launch_file]
     )
 
@@ -289,6 +313,9 @@ def generate_launch_description():
         ai_node,
         arm_hardware_launch,
         arm_moveit_launch,
+        trash_localization_node,
+        behavior_tree_node,
+        check_recent_request_node,
         # slam_toolbox_launch_file,
         delay_nav2_launch
     ]

@@ -55,8 +55,8 @@ class RetractArm : public StatefulActionNode {
 
     private:
         void execute(std::atomic<bool>& isRunning, std::atomic<bool>& execSuccess){
-            gripper_group_->setNamedTarget("open_gripper");
-            gripper_group_->move();
+            // gripper_group_->setNamedTarget("open_gripper");
+            // gripper_group_->move();
             gripper_group_->setNamedTarget("close_gripper");
             gripper_group_->move();
 
