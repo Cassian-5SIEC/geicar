@@ -37,6 +37,7 @@ VehicleController::VehicleController(const double timer_period, const double tim
   // Set the track width and wheel base
   track_width_ = 0.447;
   wheel_base_ = 0.567;
+  min_velocity_ = 0.12; 
 
   // Subscribers
   cmd_vel_subscriber_ = create_subscription<geometry_msgs::msg::Twist>(
@@ -136,11 +137,15 @@ void VehicleController::cmd_vel_callback(const geometry_msgs::msg::Twist ::Share
 
   //velocity
   
-
+  //changed manually
    if (msg->linear.x  > max_velocity_) {
     velocity_ = max_velocity_;
   } else if (msg->linear.x  < -max_velocity_) {
     velocity_ = -max_velocity_;
+  }else if (msg->linear.x  < min_velocity_ && msg->linear.x >0 ) {
+    velocity_ = min_velocity_ + msg->linear.x;
+  } else if (msg->linear.x  > -min_velocity_ && msg->linear.x <0) {
+    velocity_ = -min_velocity_ + msg->linear.x;
   } else {
     velocity_ = msg->linear.x ;
   }

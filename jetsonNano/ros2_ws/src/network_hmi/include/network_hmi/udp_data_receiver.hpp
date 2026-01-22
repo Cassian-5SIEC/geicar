@@ -35,4 +35,7 @@ private:
     int data_socket_ = -1;
     std::thread thread_;
     std::atomic<bool> running_{false};
+
+    int mode_;
+
 };

@@ -1,0 +1,23 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: ecosense_arm
+    relative_path: config/ecosense_arm.urdf
+  srdf:
+    relative_path: config/ecosense_arm.srdf
+  package_settings:
+    author_name: Triet Nguyen
+    author_email: tr_nguye@insa-toulouse.fr
+    generated_timestamp: 1765620651
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position

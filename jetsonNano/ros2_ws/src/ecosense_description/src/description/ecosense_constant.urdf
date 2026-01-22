@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+<robot name="ecosense" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- Define chassis constants -->
+    <xacro:property name="base_width" value="0.523"/> <!-- Meters -->
+    <xacro:property name="base_length" value="0.985"/>
+    <xacro:property name="base_height" value="0.2"/>
+
+    <xacro:property name="wheel_radius" value="0.095"/>
+    <xacro:property name="wheel_width" value="0.076"/>
+    <xacro:property name="wheel_xgap" value="0.567"/>
+    <xacro:property name="wheel_ygap" value="0.447"/>
+    <xacro:property name="wheel_xoff" value="0.2835"/>
+    <xacro:property name="wheel_yoff" value="0.2235"/>
+    <xacro:property name="wheel_zoff" value="0.0"/>
+
+    <xacro:property name="wheel_left_steer_limit_left" value="0.401425727959"/> <!-- 23 degrees -->
+    <xacro:property name="wheel_left_steer_limit_right" value="0.418879020479"/> <!-- 24 degrees -->
+    <xacro:property name="wheel_right_steer_limit_left" value="0.471238898038"/> <!-- 27 degrees -->
+    <xacro:property name="wheel_right_steer_limit_right" value="0.453785605519"/> <!-- 26 degrees -->
+
+    <xacro:property name="arm_mount_xoff" value="0.6"/>
+    <xacro:property name="arm_mount_yoff" value="0.08"/>
+    <xacro:property name="arm_mount_zoff" value="0.0"/>
+    <!-- Define sensors constants -->
+    <!-- RPLidar -->
+    <xacro:property name="rplidar_xoff" value="-0.34"/>
+    <xacro:property name="rplidar_yoff" value="0.0"/>
+    <xacro:property name="rplidar_zoff" value="0.45"/>
+    <xacro:property name="rplidar_rotz" value="${pi/2 - pi/22.5}"/>
+
+    <!-- IMU -->
+    <xacro:property name="imu_xoff" value="-0.16"/>
+    <xacro:property name="imu_yoff" value="0.065"/>
+    <xacro:property name="imu_zoff" value="0.16"/>
+
+    <!-- Ultrasonics -->
+    <xacro:property name="ultrasonic_front_central_xoff" value="0.54"/>
+    <xacro:property name="ultrasonic_front_central_yoff" value="0.0"/>
+    <xacro:property name="ultrasonic_front_central_zoff" value="0.0"/>
+
+    <xacro:property name="ultrasonic_front_left_xoff" value="0.50"/>
+    <xacro:property name="ultrasonic_front_left_yoff" value="0.16"/>
+    <xacro:property name="ultrasonic_front_left_zoff" value="0.0"/>
+
+    <xacro:property name="ultrasonic_front_right_xoff" value="0.50"/>
+    <xacro:property name="ultrasonic_front_right_yoff" value="-0.16"/>
+    <xacro:property name="ultrasonic_front_right_zoff" value="0.0"/>
+
+    <xacro:property name="ultrasonic_back_central_xoff" value="-0.4"/>
+    <xacro:property name="ultrasonic_back_central_yoff" value="0.0"/>
+    <xacro:property name="ultrasonic_back_central_zoff" value="0.0"/>
+
+    <xacro:property name="ultrasonic_back_left_xoff" value="-0.40"/>
+    <xacro:property name="ultrasonic_back_left_yoff" value="0.10"/>
+    <xacro:property name="ultrasonic_back_left_zoff" value="0.0"/>
+
+    <xacro:property name="ultrasonic_back_right_xoff" value="-0.40"/>
+    <xacro:property name="ultrasonic_back_right_yoff" value="-0.10"/>
+    <xacro:property name="ultrasonic_back_right_zoff" value="0.0"/>
+
+    <!-- Camera Left (WITH RESPECT TO BASE) -->
+    <xacro:property name="camera_left_xoff" value="0.30"/>
+    <xacro:property name="camera_left_yoff" value="0.07"/>
+    <xacro:property name="camera_left_zoff" value="0.25"/>
+    <xacro:property name="camera_left_rotx" value="-1.57079632679"/>
+    <xacro:property name="camera_left_roty" value="0.0"/>
+    <xacro:property name="camera_left_rotz" value="-1.57079632679"/>
+
+    <!-- Camera Right (WITH RESPECT TO CAMERA LEFT) -->
+    <!-- Calibration data from calib_01 (see GGDrive/Calibration)-->
+    
+    <xacro:property name="camera_right_xoff" value="0.16062348"/>
+    <xacro:property name="camera_right_yoff" value="0.02248679"/>
+    <xacro:property name="camera_right_zoff" value="-0.0086817"/>
+    <xacro:property name="camera_right_rotx" value="0.1126837961614861"/>
+    <xacro:property name="camera_right_roty" value="-0.01485969373342217"/>
+    <xacro:property name="camera_right_rotz" value="0.08525175128691662"/>
+
+    <!-- LD Lidar -->
+    <xacro:property name="ld_lidar_xoff" value="0.67"/>
+    <xacro:property name="ld_lidar_yoff" value="0.01"/>
+    <xacro:property name="ld_lidar_zoff" value="0.0"/>
+    <xacro:property name="ld_lidar_rotx" value="0.0"/>
+    <xacro:property name="ld_lidar_roty" value="0.0"/>
+    <xacro:property name="ld_lidar_rotz" value="${-pi/2}"/>
+</robot>   

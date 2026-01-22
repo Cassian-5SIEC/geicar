@@ -35,6 +35,7 @@ void UdpDataReceiver::start()
 
 void UdpDataReceiver::stop()
 {
+    //RCLCPP_INFO(logger_, "UdpDataReceiver::stop() entry");
     running_ = false;
     if (data_socket_ != -1) {
         close(data_socket_); // This unblocks recvfrom()
@@ -43,6 +44,7 @@ void UdpDataReceiver::stop()
     if (thread_.joinable()) {
         thread_.join();
     }
+    //RCLCPP_INFO(logger_, "UdpDataReceiver::stop() exit");
 }
 
 void UdpDataReceiver::receive_loop()
@@ -66,15 +68,28 @@ void UdpDataReceiver::receive_loop()
         return;
     }
 
+    // Set a receive timeout so recvfrom() wakes periodically and we can
+    // check `running_` to exit promptly during shutdown.
+    struct timeval tv;
+    tv.tv_sec = 1; // 1 second timeout
+    tv.tv_usec = 0;
+    setsockopt(data_socket_, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
+
     while (running_) {
         struct sockaddr_in cliaddr;
         socklen_t len = sizeof(cliaddr);
+        // Use no special flags; timeout is handled by SO_RCVTIMEO above.
         ssize_t n = recvfrom(
-            data_socket_, (char *)buffer, sizeof(buffer), MSG_WAITALL,
+            data_socket_, (char *)buffer, sizeof(buffer), 0,
             (struct sockaddr *)&cliaddr, &len);
         
         if (n <= 0) {
-            if (running_) { // Only log error if we weren't intentionally stopped
+            // Ignore benign timeout/interrupt errors (they happen regularly
+            // due to SO_RCVTIMEO) and only warn on real errors.
+            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+                continue;
+            }
+            if (running_) { // Only log if we weren't intentionally stopped
                 RCLCPP_WARN(logger_, "UDP recvfrom error: %s", strerror(errno));
             }
             continue;

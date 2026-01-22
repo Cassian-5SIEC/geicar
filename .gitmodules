@@ -1,0 +1,4 @@
+[submodule "jetsonNano/ros2_ws/src/BehaviorTree.ROS2"]
+	path = jetsonNano/ros2_ws/src/BehaviorTree.ROS2
+	url = https://github.com/BehaviorTree/BehaviorTree.ROS2.git
+	branch = humble

@@ -9,20 +9,20 @@ from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
-    urdf_model_path = os.path.join(
-        get_package_share_directory('geicar_description'),
-        'src',
-        'description',
-        'geicar_description.urdf'
-    )
+    # urdf_model_path = os.path.join(
+    #     get_package_share_directory('geicar_description'),
+    #     'src',
+    #     'description',
+    #     'geicar_description.urdf'
+    # )
 
     # --- Declare Launch Arguments ---
 
-    disable_robot_state_publisher_arg = DeclareLaunchArgument(
-        'disable_robot_state_publisher',
-        default_value='false',
-        description='Disable the robot state publisher node'
-    )
+    # disable_robot_state_publisher_arg = DeclareLaunchArgument(
+    #     'disable_robot_state_publisher',
+    #     default_value='false',
+    #     description='Disable the robot state publisher node'
+    # )
 
     disable_car_control_arg = DeclareLaunchArgument(
         'disable_car_control',
@@ -58,15 +58,15 @@ def generate_launch_description():
     
     ld = LaunchDescription()
 
-    robot_state_publisher_node = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        output='screen',
-        parameters=[{'robot_description': Command(['xacro ', str(urdf_model_path)])}, 
-                    {'use_sim_time': LaunchConfiguration('use_sim_time')}],
-        condition=UnlessCondition(LaunchConfiguration('disable_robot_state_publisher'))
-    )
+    # robot_state_publisher_node = Node(
+    #     package='robot_state_publisher',
+    #     executable='robot_state_publisher',
+    #     name='robot_state_publisher',
+    #     output='screen',
+    #     parameters=[{'robot_description': Command(['xacro ', str(urdf_model_path)])}, 
+    #                 {'use_sim_time': LaunchConfiguration('use_sim_time')}],
+    #     condition=UnlessCondition(LaunchConfiguration('disable_robot_state_publisher'))
+    # )
 
     joystick_node = Node(
         package="joystick",
@@ -141,8 +141,15 @@ def generate_launch_description():
                                         }],
                                 output='screen')
 
+    safety_node = Node(
+        package="safety_node",
+        executable="safety_node",
+        output='screen',
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+    )
+
     # Arguments Actions
-    ld.add_action(disable_robot_state_publisher_arg)
+    # ld.add_action(disable_robot_state_publisher_arg)
     ld.add_action(disable_car_control_arg)
     ld.add_action(disable_can_arg)
     ld.add_action(disable_joystick_arg)
@@ -158,8 +165,9 @@ def generate_launch_description():
     # ld.add_action(imu_filter_madgwick_node)   # Not needed because not using Magnetometer
     ld.add_action(imu_calibration_node)
     ld.add_action(system_check_node)
-    ld.add_action(robot_state_publisher_node)
+    #ld.add_action(robot_state_publisher_node)
     ld.add_action(vehicle_controller_node)
+    ld.add_action(safety_node)
 
 
     return ld
