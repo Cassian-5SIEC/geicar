@@ -37,13 +37,18 @@ class ExecutePickPlace : public StatefulActionNode {
         }
         static PortsList providedPorts() 
         {
-            return {};
+            return {
+                InputPort<double>("gripper_approach_offset_coeff", 0.17, "Offset coefficient for gripper approach"),
+                InputPort<double>("gripper_asym_offset_angle", 0.22, "Asymmetrical offset angle for gripper"),
+            };
         }
 
 
         NodeStatus onStart() override {
             isRunning_ = true;
             execSuccess_ = false;
+            getInput("gripper_approach_offset_coeff", gripper_approach_offset_coeff_);
+            getInput("gripper_asym_offset_angle", gripper_asym_offset_angle_);
             exec_thread_ = std::make_shared<std::thread>(std::bind(&ExecutePickPlace::execute, 
                                                             this, 
                                                             std::ref(isRunning_),
@@ -92,7 +97,7 @@ class ExecutePickPlace : public StatefulActionNode {
         //     }
         //     isRunning = false;
         // }
-
+1"
         void execute(std::atomic<bool>& isRunning, std::atomic<bool>& execSuccess){
             geometry_msgs::msg::PoseStamped ready_pose;
             geometry_msgs::msg::PoseStamped target_pose;
@@ -124,7 +129,7 @@ class ExecutePickPlace : public StatefulActionNode {
             gripper_group_->move();
 
             // Compute target pose
-            if (getTargetPose(target_pose, gripper_approach_offset_) == -1) {
+            if (getTargetPose(target_pose, gripper_approach_offset_coeff_) == -1) {
                 RCLCPP_WARN(node_->get_logger(), "Failed to compute target pose.");
                 execSuccess = false;
                 isRunning = false;
@@ -143,6 +148,8 @@ class ExecutePickPlace : public StatefulActionNode {
 
             gripper_group_->setNamedTarget("close_gripper");
             gripper_group_->move();
+            arm_group_->setMaxVelocityScalingFactor(1.0);
+            arm_group_->setMaxAccelerationScalingFactor(1.0);
 
             // Compute lift pose
             if (setLiftPose() == -1) {
@@ -285,16 +292,19 @@ class ExecutePickPlace : public StatefulActionNode {
 
                 pose.pose.orientation = rotateYToOrigin(pose.pose.position);
                 // Back off along the approach vector by standoff_dist
-                double dz = pose.pose.position.z;
-                double dx = pose.pose.position.x;
-                double distance = std::sqrt(dx*dx + dz*dz);
+                // double yaw_angle = std::atan2(pose.pose.position.x, pose.pose.position.z);
+                // pose.pose.position.x -= (standoff_dist * sin(yaw_angle));
+                // pose.pose.position.z -= (standoff_dist * cos(yaw_angle));
+                // double dz = pose.pose.position.z;
+                // double dx = pose.pose.position.x;
+                // double distance = std::sqrt(dx*dx + dz*dz);
 
-                if (distance < 1e-3) return -1; // Too close to origin
+                // if (distance < 1e-3) return -1; // Too close to origin
 
-                double uz = dz / distance;
-                double ux = dx / distance;
-                pose.pose.position.z -= (uz * standoff_dist);
-                pose.pose.position.x -= (ux * standoff_dist);
+                // double uz = dz / distance;
+                // double ux = dx / distance;
+                pose.pose.position.z -= (pose.pose.position.z * gripper_approach_offset_coeff_);
+                pose.pose.position.x -= (pose.pose.position.x * gripper_approach_offset_coeff_);
 
                 // Finally, transform the pose to the Arm_Base frame
                 pose = tf_target_buffer_->transform(pose, "Arm_Base");
@@ -389,7 +399,7 @@ class ExecutePickPlace : public StatefulActionNode {
         std::unique_ptr<tf2_ros::Buffer> tf_target_buffer_;
         std::shared_ptr<tf2_ros::TransformListener> tf_target_listener_{nullptr};
 
-        // Constants
-        const double gripper_asym_offset_angle_ = 0.22;       // Rads
-        const double gripper_approach_offset_ = 0.01;   // Meters
+        // Offsets
+        double gripper_asym_offset_angle_ = 0.22;         // Rads
+        double gripper_approach_offset_coeff_ = 0.17;    // Meters
 };

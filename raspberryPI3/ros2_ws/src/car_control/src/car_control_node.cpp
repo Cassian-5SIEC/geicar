@@ -12,6 +12,7 @@
 #include "interfaces/msg/joystick_order.hpp"
 #include "interfaces/msg/ultrasonic.hpp"
 #include "interfaces/msg/control.hpp"
+#include "interfaces/msg/emergency_stop_request.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "std_msgs/msg/float64.hpp"
 
@@ -118,8 +119,12 @@ private:
 
     void emergency_callback(const interfaces::msg::EmergencyStopRequest::SharedPtr emergencyStopRequest) {        
         if (emergencyStopRequest->stop_avant) {
+            start = false;
             stop = true;
             RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Emergency stop requested");
+        } else if (emergencyStopRequest->stop_avant == false) {
+            start = true;
+            stop = false;
         }
     }
 
@@ -164,6 +169,7 @@ private:
         if (!start) {
             leftRearPwmCmd = STOP;
             rightRearPwmCmd = STOP;
+            requestedThrottle = 0.0f;
             steeringVal = SERVO_ZERO;
         } else {
             //Manual Mode
