@@ -13,6 +13,7 @@
 #define ID_GPS2 0x282           //longitude
 #define ID_GPS3 0x292           //Altitude
 #define ID_GPS4 0x302           //Status : quality (fix, no fix ...), hAcc, vAcc
+#define ID_INA_POWER 0x2A3      //Power
 
 #define ID_CALIBRATION_MODE 0x400
 #define ID_COMM_CHECKING 0x410
