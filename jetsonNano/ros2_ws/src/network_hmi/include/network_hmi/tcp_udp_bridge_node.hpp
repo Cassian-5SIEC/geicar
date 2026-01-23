@@ -73,4 +73,10 @@ private:
     
     // Reusable buffer for image packets
     std::vector<uint8_t> image_packet_buffer_;
+
+    // --- Rate Limiting ---
+    std::chrono::steady_clock::time_point last_odom_send_time_;
+    std::chrono::steady_clock::time_point last_map_send_time_;
+    int max_odom_rate_; // Hz
+    int max_map_rate_; // Hz
 };

@@ -31,6 +31,7 @@ public:
     // Main function to be run in a new thread
     void run();
     void public_send_tcp_message(const std::string& msg);
+    bool send_raw_tcp_message(const std::string& msg); // <-- New optimized method
     int get_socket() const;
 
 private:

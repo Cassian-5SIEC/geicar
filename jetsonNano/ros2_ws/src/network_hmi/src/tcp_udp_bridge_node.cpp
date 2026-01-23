@@ -43,7 +43,17 @@ TcpUdpBridgeNode::TcpUdpBridgeNode()
     RCLCPP_INFO(this->get_logger(), " - Image Topic: %s", image_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - General Data Topic: %s", general_data_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - Map Topic: %s", map_topic_.c_str());
+    RCLCPP_INFO(this->get_logger(), " - Map Topic: %s", map_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - Control Topic: %s", control_topic_.c_str());
+
+    // Initialize rate limit parameters (default 1Hz as requested)
+    this->declare_parameter<int>("max_odom_rate", 1);
+    this->declare_parameter<int>("max_map_rate", 1);
+    max_odom_rate_ = this->get_parameter("max_odom_rate").as_int();
+    max_map_rate_ = this->get_parameter("max_map_rate").as_int();
+    
+    RCLCPP_INFO(this->get_logger(), " - Max Odom Rate: %d Hz", max_odom_rate_);
+    RCLCPP_INFO(this->get_logger(), " - Max Map Rate: %d Hz", max_map_rate_);
 
     // --- Create core components ---
     vehicle_state_ = std::make_shared<SharedVehicleState>();
@@ -136,6 +146,16 @@ void TcpUdpBridgeNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr ms
         return; // No client connected or client didn't want data
     }
 
+    // Rate Limiting
+    auto now = std::chrono::steady_clock::now();
+    if (max_odom_rate_ > 0) {
+        auto interval = std::chrono::milliseconds(1000 / max_odom_rate_);
+        if (now - last_odom_send_time_ < interval) {
+            return; // Too soon
+        }
+    }
+    last_odom_send_time_ = now;
+
     json real_vel_msg = {
         {"type", "real_vel"},
         {"linear_x", msg->twist.twist.linear.x},
@@ -192,6 +212,16 @@ void TcpUdpBridgeNode::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPt
         return; // No client connected or client didn't want data
     }
 
+    // Rate Limiting
+    auto now = std::chrono::steady_clock::now();
+    if (max_map_rate_ > 0) {
+        auto interval = std::chrono::milliseconds(1000 / max_map_rate_);
+        if (now - last_map_send_time_ < interval) {
+            return; // Too soon
+        }
+    }
+    last_map_send_time_ = now;
+
     // 1. Get Car Position from TF
     geometry_msgs::msg::TransformStamped transform;
     try {
@@ -236,6 +266,66 @@ void TcpUdpBridgeNode::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPt
     double sin_yaw = sin(car_yaw);
     #endif
 
+    double inv_map_res = 1.0 / map_res;
+
+    // Optimization: Pre-calculate deltas and starting point
+    double offset = OUTPUT_SIZE / 2.0;
+    
+    // Starting local point (at pixel 0,0)
+    // local_x = -(y - offset) * RES = -(0 - offset) * RES = offset * RES
+    double start_local_x = offset * OUTPUT_RES;
+    double start_local_y = offset * OUTPUT_RES;
+
+    // Delta for moving 1 pixel RIGHT (increment x)
+    double dx_global_step_x =  OUTPUT_RES * sin_yaw; 
+    double dy_global_step_x = -OUTPUT_RES * cos_yaw;
+
+    // Delta for moving 1 pixel DOWN (increment y)
+    double dx_global_step_y = -OUTPUT_RES * cos_yaw;
+    double dy_global_step_y = -OUTPUT_RES * sin_yaw;
+    
+    // Pre-calculate grid deltas
+    double start_grid_x = (car_x + (start_local_x * cos_yaw - start_local_y * sin_yaw) - map_origin_x) * inv_map_res;
+    double start_grid_y = (car_y + (start_local_x * sin_yaw + start_local_y * cos_yaw) - map_origin_y) * inv_map_res;
+    
+    double d_grid_x_step_x = dx_global_step_x * inv_map_res;
+    double d_grid_y_step_x = dy_global_step_x * inv_map_res;
+    
+    double d_grid_x_step_y = dx_global_step_y * inv_map_res;
+    double d_grid_y_step_y = dy_global_step_y * inv_map_res;
+
+    // 3. Optimized Loop
+    double current_row_grid_x = start_grid_x;
+    double current_row_grid_y = start_grid_y;
+
+    for (int y = 0; y < OUTPUT_SIZE; ++y) {
+        
+        double current_grid_x = current_row_grid_x;
+        double current_grid_y = current_row_grid_y;
+
+        for (int x = 0; x < OUTPUT_SIZE; ++x) {
+            
+            int gx = static_cast<int>(current_grid_x);
+            int gy = static_cast<int>(current_grid_y);
+
+            // Check bounds
+            if (gx >= 0 && gx < width && gy >= 0 && gy < height) {
+                rotated_map[y * OUTPUT_SIZE + x] = msg->data[gy * width + gx];
+            } else {
+                rotated_map[y * OUTPUT_SIZE + x] = -1; 
+            }
+
+            // Move right
+            current_grid_x += d_grid_x_step_x;
+            current_grid_y += d_grid_y_step_x;
+        }
+
+        // Move down
+        current_row_grid_x += d_grid_x_step_y;
+        current_row_grid_y += d_grid_y_step_y;
+    }
+
+    /*
     // 3. Iterate over output pixels and sample from original map
     for (int y = 0; y < OUTPUT_SIZE; ++y) {
         for (int x = 0; x < OUTPUT_SIZE; ++x) {
@@ -302,6 +392,7 @@ void TcpUdpBridgeNode::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPt
             }
         }
     }
+    */
 
     json map_info_msg = {
         {"type", "occupancy_grid"},

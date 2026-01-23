@@ -14,11 +14,11 @@ TcpControlServer::TcpControlServer(
     std::shared_ptr<SharedVehicleState> vehicle_state,
     std::string control_topic)
 : logger_(logger.get_child("tcp_server")),
+  clock_(node->get_clock()),
   port_(port),
   client_info_(client_info),
   vehicle_state_(vehicle_state),
-  control_topic_(control_topic),
-  clock_(node->get_clock())
+  control_topic_(control_topic)
 {
     control_pub_ = node->create_publisher<interfaces::msg::Control>(control_topic_, 1);
     trash_response_pub_ = node->create_publisher<interfaces::msg::Control>("trash_response", 1);
@@ -183,36 +183,45 @@ void TcpControlServer::handle_control_message(const interfaces::msg::Control::Sh
             sessions_copy = client_sessions_;
         }
 
-        for (auto& session : sessions_copy) {
-            nlohmann::json json_msg;
-            
-            if (msg->command == "ask-pickup") {
-                 json_msg["type"] = "ask-pickup";
-            } else if (msg->command == "trash-detected") {
-                json_msg["type"] = "trash-detected";
-            } else if (msg->command == "start") {
-                json_msg["type"] = "cmd";
-                json_msg["cmd"] = "start";
-            } else if (msg->command == "stop") {
-                json_msg["type"] = "cmd";
-                json_msg["cmd"] = "stop";
-            } else if (msg->command == "manual") {
-                json_msg["type"] = "cmd";
-                json_msg["cmd"] = "set_mode";
-                json_msg["mode"] = 0;
-            } else if (msg->command == "autonomous") {
-                json_msg["type"] = "cmd";
-                json_msg["cmd"] = "set_mode";
-                json_msg["mode"] = 1;
-            } else if (msg->command == "calibration") {
-                json_msg["type"] = "cmd";
-                json_msg["cmd"] = "set_mode";
-                json_msg["mode"] = 2;
-            } else {
-                continue; // Unknown command
-            }
+        nlohmann::json json_msg; // <-- Declare here
 
-            session->public_send_tcp_message(json_msg.dump());
+        if (msg->command == "ask-pickup") {
+                json_msg["type"] = "ask-pickup";
+        } else if (msg->command == "trash-detected") {
+            json_msg["type"] = "trash-detected";
+        } else if (msg->command == "start") {
+            json_msg["type"] = "cmd";
+            json_msg["cmd"] = "start";
+        } else if (msg->command == "stop") {
+            json_msg["type"] = "cmd";
+            json_msg["cmd"] = "stop";
+        } else if (msg->command == "manual") {
+            json_msg["type"] = "cmd";
+            json_msg["cmd"] = "set_mode";
+            json_msg["mode"] = 0;
+        } else if (msg->command == "autonomous") {
+            json_msg["type"] = "cmd";
+            json_msg["cmd"] = "set_mode";
+            json_msg["mode"] = 1;
+        } else if (msg->command == "calibration") {
+            json_msg["type"] = "cmd";
+            json_msg["cmd"] = "set_mode";
+            json_msg["mode"] = 2;
+        } else if (msg->command == "accept-pickup") {
+            json_msg["type"] = "response-pickup";
+            json_msg["response"] = true;
+        } else if (msg->command == "refuse-pickup") {
+            json_msg["type"] = "response-pickup";
+            json_msg["response"] = false;
+        } else {
+            return; // Loop handled above, so simple return is fine
+        }
+
+        // Optimization: Serialize once, append newline, and send raw string
+        std::string serialized_msg = json_msg.dump() + "\n";
+        
+        for (auto& session : sessions_copy) {
+            session->send_raw_tcp_message(serialized_msg);
         }
     }
 }
