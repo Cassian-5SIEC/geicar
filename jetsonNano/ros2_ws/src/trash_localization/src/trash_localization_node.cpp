@@ -291,10 +291,12 @@ class TrashLocalizationNode : public rclcpp::Node
             // This avoids "too close" distance issues from poor triangulation depth.
             // store latest estimated angle for external queries
             latest_target_angle_ = target_angle;
-            int target_index = find_target_in_lidar_scan(target_angle, latest_lidar_scan_);
+            double final_angle = 0.0;
+            double final_dist = 0.0;
+            bool found = find_target_in_lidar_scan(target_angle, latest_lidar_scan_, final_angle, final_dist);
 
-            if (target_index >= 0) {
-                broadcast_target_tf(latest_lidar_scan_.angle_min + target_index * latest_lidar_scan_.angle_increment, latest_lidar_scan_.ranges[target_index], lidar_frame_);
+            if (found) {
+                broadcast_target_tf(final_angle, final_dist, lidar_frame_);
                 message = "Target localized and TF broadcasted.";
                 return true;
             } else {
@@ -723,14 +725,17 @@ class TrashLocalizationNode : public rclcpp::Node
          * 
          * @param angle The angle (in radians) to search for the target in LIDAR frame.
          * @param scan The LIDAR scan data.
-         * @return int The index of the target in the LIDAR scan ranges, or -1 if not found.
+         * @param out_angle [out] The computed angle of the trash center.
+         * @param out_dist [out] The computed distance of the trash center.
+         * @return bool True if found, false otherwise.
          */
-        int find_target_in_lidar_scan(double angle, sensor_msgs::msg::LaserScan & scan) {
+        bool find_target_in_lidar_scan(double angle, sensor_msgs::msg::LaserScan & scan, double & out_angle, double & out_dist) {
             const double search_angle_tolerance_ = 10*3.141592654/180.0; // 10 degrees in radians
             const int min_valid_lidar_points_ = 3;      // Minimum pixel needed to confirm target detection
             const int max_valid_lidar_points_ = 20;   // Maximum pixel to avoid false positives
             const double max_lidar_distance_m_ = 1.5;    // Maximum distance to consider LIDAR points valid
             const double min_lidar_distance_m_ = 0.2;    // Minimum distance to consider LIDAR points valid
+            const double cluster_radius_ = 0.05;         // 5cm radius for clustering
 
             publish_search_zone_marker(angle, search_angle_tolerance_, min_lidar_distance_m_, max_lidar_distance_m_);
 
@@ -747,7 +752,7 @@ class TrashLocalizationNode : public rclcpp::Node
             int pixel_detected = 0;
             
             std::array<int, max_valid_lidar_points_> index_detected = {0};
-            int target_index = 0;
+            int target_index = -1;
 
             // Perform sweep in LIDAR scan data within the angle range from the middle outwards
             // Perform sweep in LIDAR scan data within the angle range from the middle outwards
@@ -786,7 +791,7 @@ class TrashLocalizationNode : public rclcpp::Node
             // }
             RCLCPP_WARN(this->get_logger(), "[TRASH_LOCALIZATION] Detected %d valid LIDAR points for target search.", pixel_detected);
             if (pixel_detected >= min_valid_lidar_points_){
-                // Find minimum distance index among detected points
+                // Find minimum distance index among detected points (Seed point)
                 double min_distance = scan.range_max + 1.0;
                 for (int j = 0; j < std::min(pixel_detected, max_valid_lidar_points_); j++){
                     double distance = scan.ranges[index_detected[j]];
@@ -795,10 +800,48 @@ class TrashLocalizationNode : public rclcpp::Node
                         target_index = index_detected[j];
                     }
                 }
-                return target_index;
+                
+                if (target_index == -1) return false;
+
+                // Compute centroid of the cluster around the seed point
+                double seed_angle = scan.angle_min + target_index * scan.angle_increment;
+                double seed_x = min_distance * cos(seed_angle);
+                double seed_y = min_distance * sin(seed_angle);
+
+                double sum_x = 0.0;
+                double sum_y = 0.0;
+                int count = 0;
+
+                for (size_t i = 0; i < scan.ranges.size(); ++i) {
+                    double d = scan.ranges[i];
+                    
+                    // Optional: Skip points clearly out of valid sensing range to reduce noise
+                    if (d < min_lidar_distance_m_ || d > max_lidar_distance_m_) continue;
+
+                    double a = scan.angle_min + i * scan.angle_increment;
+                    double px = d * cos(a);
+                    double py = d * sin(a);
+
+                    double dist_sq = (px - seed_x)*(px - seed_x) + (py - seed_y)*(py - seed_y);
+                    if (dist_sq <= cluster_radius_ * cluster_radius_) {
+                        sum_x += px;
+                        sum_y += py;
+                        count++;
+                    }
+                }
+                
+                if (count > 0) {
+                    double mean_x = sum_x / count;
+                    double mean_y = sum_y / count;
+                    out_angle = atan2(mean_y, mean_x);
+                    out_dist = sqrt(mean_x*mean_x + mean_y*mean_y);
+                    return true;
+                }
+                
+                return false;
             } else {    
                 RCLCPP_WARN(this->get_logger(), "[TRASH_LOCALIZATION] Not enough valid LIDAR points detected for target.");
-                return -1; // Indicate no valid target found
+                return false;
             }
         }
 
