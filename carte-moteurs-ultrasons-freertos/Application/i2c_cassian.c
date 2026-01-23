@@ -34,7 +34,9 @@ void I2C_init(){
 //		return ;
 //	}
 //	I2C_Init_Battery_Reg() ;
-	I2C_Init_Jet_Reg() ;
+//	I2C_Init_Jet_Reg() ;
+	I2C_Init_Motors_Reg(ADDR_MOTOR_R) ;
+
 	//TODO init register other boards
 }
 
@@ -91,6 +93,7 @@ void I2C_Init_Battery_Reg(){
  */
 void I2C_Init_Motors_Reg(uint32_t addr){
 	//reseting the parameter of the INA
+
 	uint8_t data_rst[2]; //reset value of the INA237  : 1<<15
 	data_rst[0] = (uint8_t) (1<<7) ; //MSB
 	data_rst[1] = 0 ; 	// LSB
