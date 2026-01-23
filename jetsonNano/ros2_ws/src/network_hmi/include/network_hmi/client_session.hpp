@@ -31,6 +31,7 @@ public:
     // Main function to be run in a new thread
     void run();
     void public_send_tcp_message(const std::string& msg);
+    bool send_raw_tcp_message(const std::string& msg); // <-- New optimized method
     int get_socket() const;
 
 private:
@@ -46,6 +47,7 @@ private:
     void on_start();
     void on_set_mode(const nlohmann::json& msg);
     void on_heartbeat_ack();
+    void on_response_pickup(const nlohmann::json& msg);
 
     rclcpp::Logger logger_;
     int socket_;
