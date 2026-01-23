@@ -197,7 +197,11 @@ void TcpUdpBridgeNode::general_data_callback(const interfaces::msg::GeneralData:
 
     json general_data_msg = {
         {"type", "general_data"},
-        {"battery_level", msg->battery_level}
+        {"battery_level", msg->battery_level},
+        {"battery_power", msg->power_batt},
+        {"left_motor_power", msg->power_mg},
+        {"right_motor_power", msg->power_md},
+        {"jetson_power", msg->power_jet}
     };
     
     udp_sender_->send_json(general_data_msg.dump(), dest);
