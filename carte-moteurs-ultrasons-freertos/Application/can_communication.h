@@ -23,6 +23,7 @@ extern "C" {
 #define CAN_ID_MOTORS_CMD 		0x100	// Motors speed and steering angle <= from Raspberry
 #define CAN_ID_CALIBRATION_MODE	0x400   // Calibration mode <= from Raspberry and => to Raspberry
 #define CAN_ID_COMM_CHECKING 	0x410   // Communication checking <= from Raspberry and => to Raspberry
+#define CAN_ID_INA				0x2A3
 
 // Define for calibration mode
 #define CALIBRATION_REQUEST		0x1		// frame[0]	cmd for entering calibration mode (<= from Raspberry)

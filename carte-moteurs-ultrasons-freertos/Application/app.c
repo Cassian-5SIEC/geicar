@@ -225,6 +225,20 @@ void APP_Run(AppMessage_typeDef *msg) {
 		CAN_COM_Send(CAN_ID_US2, data, 6);
 		break;
 
+	case INA_MEASURE_ID:
+		INATypeDef *INAMeasure = (INATypeDef*) msg;
+		data[0]= INAMeasure->source_id & 0xFF;
+		data[1]= (INAMeasure->source_id<<8) & 0xFF;
+		data[2]= (INAMeasure->source_id<<16) & 0xFF;
+		data[3]= (INAMeasure->source_id<<24) & 0xFF;
+
+		data[4]= INAMeasure->power & 0xFF;
+		data[5]= (INAMeasure->power<<8) & 0xFF;
+		data[6]= (INAMeasure->power<<16) & 0xFF;
+		data[7]= (INAMeasure->power<<24) & 0xFF;
+
+		CAN_COM_Send(CAN_ID_INA, data, 8) ;
+		break ;
 	default:
 		break;
 	}

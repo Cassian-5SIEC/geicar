@@ -84,6 +84,7 @@
 #define ULTRASOUND_MEASURES_ID	2
 #define BATTERY_MEASURE_ID		3
 #define CAN_RECEIVED_FRAME_ID	4
+#define INA_MEASURE_ID 			5
 
 // #define CAR_CONTROL_UPDATE_ID 	1
 // #define US_UPDATE_ID 			2
