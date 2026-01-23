@@ -43,7 +43,6 @@ TcpUdpBridgeNode::TcpUdpBridgeNode()
     RCLCPP_INFO(this->get_logger(), " - Image Topic: %s", image_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - General Data Topic: %s", general_data_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - Map Topic: %s", map_topic_.c_str());
-    RCLCPP_INFO(this->get_logger(), " - Map Topic: %s", map_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - Control Topic: %s", control_topic_.c_str());
 
     // Initialize rate limit parameters (default 1Hz as requested)
