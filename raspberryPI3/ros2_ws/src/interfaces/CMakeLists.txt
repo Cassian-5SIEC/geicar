@@ -22,10 +22,12 @@ set(msg_files
   "msg/Gnss.msg"
   "msg/SystemCheck.msg"
   "msg/Control.msg"
+  "msg/EmergencyStopRequest.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
+  DEPENDENCIES std_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)

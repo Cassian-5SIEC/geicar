@@ -220,15 +220,23 @@
     <joint name="camera_left_joint" type="fixed">
         <parent link="base_link"/>
         <child link="camera_left_link"/>
-        <origin xyz="${camera_left_xoff} ${camera_left_yoff} ${camera_left_zoff}" rpy="0 0 0"/>
+        <origin xyz="${camera_left_xoff} ${camera_left_yoff} ${camera_left_zoff}" rpy="${camera_left_rotx} ${camera_left_roty} ${camera_left_rotz}"/>
     </joint>
 
     <link name="camera_right_link">
     </link>
     <joint name="camera_right_joint" type="fixed">
-        <parent link="base_link"/>
+        <parent link="camera_left_link"/>
         <child link="camera_right_link"/>
-        <origin xyz="${camera_right_xoff} ${camera_right_yoff} ${camera_right_zoff}" rpy="0 0 0"/>
+        <origin xyz="${camera_right_xoff} ${camera_right_yoff} ${camera_right_zoff}" rpy="${camera_right_rotx} ${camera_right_roty} ${camera_right_rotz}"/>
+    </joint>
+
+    <link name="ld_lidar_link">
+    </link>
+    <joint name="ld_lidar_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="ld_lidar_link"/>
+        <origin xyz="${ld_lidar_xoff} ${ld_lidar_yoff} ${ld_lidar_zoff}" rpy="${ld_lidar_rotx} ${ld_lidar_roty} ${ld_lidar_rotz}"/>
     </joint>
 
 </robot>

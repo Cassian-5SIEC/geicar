@@ -2,7 +2,7 @@
 // https://docs.ros.org/en/jazzy/How-To-Guides/Setup-ROS-2-with-VSCode-and-Docker-Container.html
 {
     "name": "ROS 2 Development Container",
-    "privileged": true,
+    "privileged": false,
     "remoteUser": "${localEnv:USER}",
     "build": {
         "dockerfile": "Dockerfile",
@@ -40,10 +40,13 @@
         "--pid=host",
         "--ipc=host",
         "-e", "DISPLAY=${env:DISPLAY}",
-        "--name", "ros2-humble-dev"
+        "--name", "ros2-humble-dev",
+        // "--device=/dev/ttyACM0",
+        "--group-add=dialout"
     ],
     "mounts": [
        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached"
     ],
+    "postCreateCommand": "rosdep update && rosdep install --from-paths /${localWorkspaceFolder}/jetsonNano/ros2_ws/src --ignore-src -r -y"
 }

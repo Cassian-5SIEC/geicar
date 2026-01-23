@@ -137,6 +137,9 @@ class EcoSenseNode(Node):
                 cv2.rectangle(cv_image, (x1, y1), (x2, y2), color_, 2)
                 cv2.putText(cv_image, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_, 2)
 
+                if (det['score'] < 0.8):    # If score is too low, skip it
+                    continue
+
                 # Calculate area to find biggest box
                 area = (x2 - x1) * (y2 - y1)
                 if area > max_area:

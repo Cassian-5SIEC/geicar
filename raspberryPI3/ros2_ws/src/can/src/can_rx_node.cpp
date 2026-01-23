@@ -335,6 +335,50 @@ private:
                 generalDataMsg.humidity= humidity;
 
                 publisher_generalData_->publish(generalDataMsg);
+            }else if (frame.can_id == ID_INA_POWER){  
+                RCLCPP_DEBUG(this->get_logger(), "Publishing to /general_data Topic");
+
+                auto generalDataMsg = interfaces::msg::GeneralData();
+
+                //Update Power level
+                /*Can frame : 77 66 55 44 33 22 11 00
+                LSB message from STM32: 
+                id 4o 
+                data 4o
+                        id : 00 11 22 33
+                        power data : 44 55 66 77
+                
+                */
+                float power_batt;
+                float power_md;
+                float power_mg;
+                float power_jet;
+
+                // 
+                if ((frame.data[3] & 0x1) == 1){
+                    memcpy(&power_batt, &frame.data[4],4);
+                } 
+                if ((frame.data[3] & 0x2) == 1){
+                    memcpy(&power_md, &frame.data[4],4);;
+                } 
+                if ((frame.data[3] & 0x3) == 1){
+                    memcpy(&power_mg, &frame.data[4],4);
+                } 
+                if ((frame.data[3] & 0x4) == 1){
+                    memcpy(&power_jet, &frame.data[4],4);
+                } 
+                
+               
+                
+                
+
+                // Update general data message before publishing 
+                generalDataMsg.power_batt = power_batt;
+                generalDataMsg.power_mg = power_mg;
+                generalDataMsg.power_md = power_md;
+                generalDataMsg.power_jet = power_jet;
+                
+                publisher_generalData_->publish(generalDataMsg);
             }
 
         }
