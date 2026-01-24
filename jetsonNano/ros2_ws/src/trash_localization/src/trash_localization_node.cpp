@@ -340,26 +340,7 @@ class TrashLocalizationNode : public rclcpp::Node
             bool right_valid = false;
             double now_s = this->now().seconds();
 
-            // Check Left Camera Validity
-            if (left_camera_target_.header.stamp.sec != 0) {
-                 double left_time = rclcpp::Time(left_camera_target_.header.stamp).seconds();
-                 if ((now_s - left_time) < tf_timeout_) {
-                     left_valid = true;
-                 }
-            }
-
-            if (left_valid) {
-                double angle_cam = compute_angle_from_camera(left_camera_target_, left_camera_info_, left_camera_frame_);
-                auto target_pose = compute_pose_from_camera_angle(left_camera_target_, left_camera_info_, angle_cam, left_camera_frame_);
-                
-                broadcast_estimated_target_tf(target_pose);
-                
-                response->success = true;
-                response->message = "Computed pose from LEFT camera.";
-                return;
-            }
-
-            // Check Right Camera Validity if Left is invalid
+            // Check Right Camera Validity 
             if (right_camera_target_.header.stamp.sec != 0) {
                  double right_time = rclcpp::Time(right_camera_target_.header.stamp).seconds();
                  if ((now_s - right_time) < tf_timeout_) {
@@ -376,6 +357,25 @@ class TrashLocalizationNode : public rclcpp::Node
                  response->success = true;
                  response->message = "Computed pose from RIGHT camera.";
                  return;
+            }
+
+            // Check Left Camera Validity if Right is invalid
+            if (left_camera_target_.header.stamp.sec != 0) {
+                 double left_time = rclcpp::Time(left_camera_target_.header.stamp).seconds();
+                 if ((now_s - left_time) < tf_timeout_) {
+                     left_valid = true;
+                 }
+            }
+
+            if (left_valid) {
+                double angle_cam = compute_angle_from_camera(left_camera_target_, left_camera_info_, left_camera_frame_);
+                auto target_pose = compute_pose_from_camera_angle(left_camera_target_, left_camera_info_, angle_cam, left_camera_frame_);
+                
+                broadcast_estimated_target_tf(target_pose);
+                
+                response->success = true;
+                response->message = "Computed pose from LEFT camera.";
+                return;
             }
 
             response->success = false;
@@ -1045,15 +1045,12 @@ class TrashLocalizationNode : public rclcpp::Node
             
             target_tf.transform.translation.x = pose_in_map.pose.position.x;
             target_tf.transform.translation.y = pose_in_map.pose.position.y;
-            target_tf.transform.translation.z = pose_in_map.pose.position.z;
+            target_tf.transform.translation.z = 0.0;
             
-            target_tf.transform.rotation = pose_in_map.pose.orientation;
-            // Ensure valid quaternion if zero
-            if (target_tf.transform.rotation.w == 0 && target_tf.transform.rotation.x == 0 && 
-                target_tf.transform.rotation.y == 0 && target_tf.transform.rotation.z == 0) {
-                target_tf.transform.rotation.w = 1.0;
-            }
-
+            target_tf.transform.rotation.x = 0;
+            target_tf.transform.rotation.y = 0;
+            target_tf.transform.rotation.z = 0;
+            target_tf.transform.rotation.w = 1;
             tf_static_broadcaster_->sendTransform(target_tf);
         }
 
