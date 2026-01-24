@@ -5,7 +5,9 @@
         <Delay delay_msec="3000">
             <Sequence>
                 <ForceSuccess>
-                    <CheckTargetInRange   name="check_target_in_range"/>
+                    <CheckTargetInRange name="check_target_in_range"
+                                        max_range="0.38"
+                                        min_range="0.30"/>
                 </ForceSuccess>
                 <Fallback>
                     <ExecutePickPlace   name="pick_place_action"/>
@@ -20,8 +22,10 @@
         <Action ID="ExecutePickPlace"
                 editable="true">
         </Action>
-        <Action ID="CheckTargetInRange"
-                editable="true">
+		<Action ID="CheckTargetInRange"
+				editable="true">
+            <input_port name="max_range"/>
+            <input_port name="min_range"/>
         </Action>
         <Action ID="RetractArm"
                 editable="true">
