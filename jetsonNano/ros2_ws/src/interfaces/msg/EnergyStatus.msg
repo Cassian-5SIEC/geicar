@@ -1,0 +1,4 @@
+float32 energy_batt
+float32 energy_left
+float32 energy_right
+float32 energy_jetson
