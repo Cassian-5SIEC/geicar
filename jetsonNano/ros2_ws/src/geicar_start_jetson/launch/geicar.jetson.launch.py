@@ -262,6 +262,11 @@ def generate_launch_description():
         actions=[nav2_launch_file]
     )
 
+    delay_ekf_launch = TimerAction(
+        period=15.0,
+        actions=[robot_localization_node]
+    )
+
     args = [
         disable_robot_state_publisher_arg,
         declare_disable_lidar_arg,
@@ -284,7 +289,7 @@ def generate_launch_description():
         system_check_ack_node,
         bridge_node,
         rf2o_laser_odometry_node,
-        robot_localization_node,
+        delay_ekf_launch,
         # foxglove_server,
         ai_node,
         arm_hardware_launch,
