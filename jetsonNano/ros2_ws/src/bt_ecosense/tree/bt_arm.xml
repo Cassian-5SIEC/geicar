@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="arm_tree">
+		<Sequence>
+			<SendControlMsg name="send_stop_msg"
+							topic_name="/control_msg"
+							command="stop"/>
+			<Delay delay_msec="2000">
+					<TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+			</Delay>
+			<CheckTargetInRange name="check_target_in_range"
+								max_range="0.38"
+								min_range="0.30"/>
+			<Fallback>
+					<ExecutePickPlace name="pick_place_action"
+								gripper_approach_offset_coeff="0.12"
+								gripper_asym_offset_angle="0.19"/>
+					<RetractArm name="retract_arm_action"/>
+			</Fallback>
+			<TrashLocalizationService service_name="/trash_localization_node/clear_target_tf"/>
+			<SendControlMsg name="send_start_msg"
+							topic_name="/control_msg"
+							command="start"/>
+		</Sequence>
+  </BehaviorTree>
+</root>

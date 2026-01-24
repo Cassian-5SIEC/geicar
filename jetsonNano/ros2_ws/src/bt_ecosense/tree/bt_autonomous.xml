@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="autonomous_tree">
+    <Sequence>
+      <Parallel failure_count="1"
+                success_count="1">
+        <Inverter>
+          <KeepRunningUntilFailure>
+            <Inverter>
+              <TrashLocalizationService service_name="/trash_localization_node/compute_pose_from_camera"/>
+            </Inverter>
+          </KeepRunningUntilFailure>
+        </Inverter>
+        <Fallback>
+          <TrashLocalizationService service_name="/trash_localization_node/compute_pose_from_camera"/>
+          <ForceFailure>
+            <AlwaysFailure/>
+          </ForceFailure>
+        </Fallback>
+      </Parallel>
+      <Parallel failure_count="1"
+                success_count="1">
+        <Inverter>
+          <KeepRunningUntilFailure>
+            <Inverter>
+              <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+            </Inverter>
+          </KeepRunningUntilFailure>
+        </Inverter>
+        <Fallback>
+          <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+          <ForceFailure>
+            <Sequence>
+              <SetGoalOffset target_frame="estimated_target"
+                             standoff_distance="1.5"
+                             goal_pose="{estimated_goal_pose}"/>
+              <NavToGoal goal_pose="{estimated_goal_pose}"/>
+            </Sequence>
+          </ForceFailure>
+        </Fallback>
+      </Parallel>
+      <Parallel failure_count="1"
+                success_count="1">
+        <Inverter>
+          <KeepRunningUntilFailure>
+            <Inverter>
+              <Sequence>
+                <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+                <CheckTargetInRange name="check_target_in_range"
+                                    max_range="0.38"
+                                    min_range="0.30"/>
+              </Sequence>
+            </Inverter>
+          </KeepRunningUntilFailure>
+        </Inverter>
+        <Fallback>
+          <CheckTargetInRange name="check_target_in_range"
+                              max_range="0.38"
+                              min_range="0.30"/>
+          <ForceFailure>
+            <Sequence>
+              <SetGoalOffset target_frame="target_trash"
+                             standoff_distance="0.9"
+                             goal_pose="{goal_pose}"/>
+              <NavToGoal goal_pose="{goal_pose}"/>
+            </Sequence>
+          </ForceFailure>
+        </Fallback>
+      </Parallel>
+      <SubTree ID="arm_tree"
+               _autoremap="true"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

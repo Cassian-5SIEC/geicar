@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="teleop_tree">
+    <Sequence>
+      <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+      <CheckTargetInRange name="check_target_in_range"
+                          max_range="0.38"
+                          min_range="0.30"/>
+      <SendControlMsg name="send_trash_detected_msg"
+                      topic_name="/control_msg"
+                      command="trash-detected"/>
+      <CheckForRecentRequest name="check_for_recent_request"
+                             topic_name="/recent_request_hmi"/>
+      <SubTree ID="arm_tree"
+               _autoremap="true"/>
+    </Sequence>
+  </BehaviorTree>
+
+</root>

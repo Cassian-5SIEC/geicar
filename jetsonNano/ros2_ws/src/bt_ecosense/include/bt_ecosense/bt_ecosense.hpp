@@ -6,3 +6,5 @@
 #include "bt_ecosense/action/sendControlMsg.hpp"
 #include "bt_ecosense/action/checkForControlMsg.hpp"
 #include "bt_ecosense/action/checkForRecentRequest.hpp"
+#include "bt_ecosense/action/checkForModeMsg.hpp"
+#include "bt_ecosense/action/checkTrashInCenter.hpp"

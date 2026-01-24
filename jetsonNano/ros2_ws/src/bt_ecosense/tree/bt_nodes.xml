@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+
+		<!-- Description of Node Models (used by Groot2) -->
+	<TreeNodesModel>
+		<Action ID="CheckTargetInRange"
+				editable="true">
+            <input_port name="max_range"/>
+            <input_port name="min_range"/>
+        </Action>
+		<Action ID="ExecutePickPlace"
+				editable="true">
+			<input_port name="gripper_approach_offset_coeff"/>
+			<input_port name="gripper_asym_offset_angle"/>
+		</Action>
+		<Action ID="RetractArm"
+				editable="true"/>
+		<Action ID="TrashLocalizationService"
+				editable="true">
+			<input_port name="service_name"/>
+		</Action>
+		<Action ID="SetGoalOffset"
+				editable="true">
+			<input_port name="target_frame"/>
+			<input_port name="standoff_distance"/>
+			<output_port name="goal_pose"/>
+		</Action>
+        <Action ID="SetVel"
+                editable="true">
+            <input_port name="linear_x"/>
+            <input_port name="angular_z"/>
+            <input_port name="topic_name"/>
+        </Action>
+		<Action ID="NavToGoal"
+				editable="true">
+			<input_port name="goal_pose"/>
+		</Action>
+		<Action ID="SendControlMsg"
+				editable="true">
+			<input_port name="topic_name"/>
+			<input_port name="command"/>
+		</Action>
+		<Action ID="CheckForControlMsg"
+				editable="true">
+			<input_port name="topic_name"/>
+			<input_port name="expected_command"/>
+		</Action>
+		<Action ID="CheckForRecentRequest"
+				editable="true">
+			<input_port name="topic_name"/>
+		</Action>
+		<Action ID="CheckForModeMsg"
+				editable="true">
+			<input_port name="topic_name"/>
+			<output_port name="current_mode"/>
+		</Action>
+		<Action ID="CheckTrashInCenter"
+				editable="true">
+			<input_port name="service_name"/>
+			<input_port name="center_threshold"/>
+			<output_port name="direction"/>
+		</Action>
+	</TreeNodesModel>
+</root>

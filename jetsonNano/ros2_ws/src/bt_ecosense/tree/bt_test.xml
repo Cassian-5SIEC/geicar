@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+    <BehaviorTree ID="test_tree">
+        <Sequence>
+            <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
+            <Fallback>
+                <CheckTargetInRange name="check_target_in_range"
+                                    max_range="0.42"
+                                    min_range="0.30"/>
+                <Sequence>
+                    <SetGoalOffset target_frame="target_trash"
+                                standoff_distance="0.9"
+                                goal_pose="{goal_pose}"/>
+                    <NavToGoal goal_pose="{goal_pose}"/>
+                </Sequence>
+            </Fallback>
+        </Sequence>
+	</BehaviorTree>
+</root>
