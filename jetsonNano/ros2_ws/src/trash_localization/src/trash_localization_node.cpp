@@ -120,6 +120,12 @@ class TrashLocalizationNode : public rclcpp::Node
                 std::bind(&TrashLocalizationNode::get_target_angle, this, std::placeholders::_1, std::placeholders::_2)
             );
 
+            // Service to compute pose from camera and publish TF
+            compute_pose_from_camera_service_ = this->create_service<std_srvs::srv::Trigger>(
+                "trash_localization_node/compute_pose_from_camera",
+                std::bind(&TrashLocalizationNode::compute_pose_from_camera_callback, this, std::placeholders::_1, std::placeholders::_2)
+            );
+
             // Publisher for search zone markers
             marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("trash_localization_node/search_zone", 10);
 
@@ -325,6 +331,55 @@ class TrashLocalizationNode : public rclcpp::Node
             // Return the latest computed angle in radians as the message
             response->success = true;
             response->message = std::to_string(latest_target_angle_);
+        }
+
+        void compute_pose_from_camera_callback(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                                               std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+            (void)request;
+            bool left_valid = false;
+            bool right_valid = false;
+            double now_s = this->now().seconds();
+
+            // Check Left Camera Validity
+            if (left_camera_target_.header.stamp.sec != 0) {
+                 double left_time = rclcpp::Time(left_camera_target_.header.stamp).seconds();
+                 if ((now_s - left_time) < tf_timeout_) {
+                     left_valid = true;
+                 }
+            }
+
+            if (left_valid) {
+                double angle_cam = compute_angle_from_camera(left_camera_target_, left_camera_info_, left_camera_frame_);
+                auto target_pose = compute_pose_from_camera_angle(left_camera_target_, left_camera_info_, angle_cam, left_camera_frame_);
+                
+                broadcast_estimated_target_tf(target_pose, left_camera_frame_);
+                
+                response->success = true;
+                response->message = "Computed pose from LEFT camera.";
+                return;
+            }
+
+            // Check Right Camera Validity if Left is invalid
+            if (right_camera_target_.header.stamp.sec != 0) {
+                 double right_time = rclcpp::Time(right_camera_target_.header.stamp).seconds();
+                 if ((now_s - right_time) < tf_timeout_) {
+                     right_valid = true;
+                 }
+            }
+
+            if (right_valid) {
+                 double angle_cam = compute_angle_from_camera(right_camera_target_, right_camera_info_, right_camera_frame_);
+                 auto target_pose = compute_pose_from_camera_angle(right_camera_target_, right_camera_info_, angle_cam, right_camera_frame_);
+                 
+                 broadcast_estimated_target_tf(target_pose, right_camera_frame_);
+
+                 response->success = true;
+                 response->message = "Computed pose from RIGHT camera.";
+                 return;
+            }
+
+            response->success = false;
+            response->message = "No valid camera data available.";
         }
 
         void process_data(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
@@ -929,6 +984,26 @@ class TrashLocalizationNode : public rclcpp::Node
             tf_static_broadcaster_->sendTransform(target_tf);
         }
 
+        void broadcast_estimated_target_tf(const geometry_msgs::msg::PoseStamped & pose, const std::string & parent_frame) {
+            geometry_msgs::msg::TransformStamped target_tf;
+            target_tf.header.stamp = this->now();
+            target_tf.header.frame_id = parent_frame;
+            target_tf.child_frame_id = "estimated_target";
+            
+            target_tf.transform.translation.x = pose.pose.position.x;
+            target_tf.transform.translation.y = pose.pose.position.y;
+            target_tf.transform.translation.z = pose.pose.position.z;
+            
+            target_tf.transform.rotation = pose.pose.orientation;
+            // Ensure valid quaternion if zero
+            if (target_tf.transform.rotation.w == 0 && target_tf.transform.rotation.x == 0 && 
+                target_tf.transform.rotation.y == 0 && target_tf.transform.rotation.z == 0) {
+                target_tf.transform.rotation.w = 1.0;
+            }
+
+            tf_static_broadcaster_->sendTransform(target_tf);
+        }
+
         void clear_target_tf(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                        std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
             (void)request;
@@ -1087,6 +1162,7 @@ class TrashLocalizationNode : public rclcpp::Node
         rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr publish_target_tf_service_;
         rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr clear_target_tf_service_;
         rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr get_target_angle_service_;
+        rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr compute_pose_from_camera_service_;
 
         std::string left_camera_frame_;
         std::string right_camera_frame_;
