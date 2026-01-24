@@ -352,7 +352,7 @@ class TrashLocalizationNode : public rclcpp::Node
                 double angle_cam = compute_angle_from_camera(left_camera_target_, left_camera_info_, left_camera_frame_);
                 auto target_pose = compute_pose_from_camera_angle(left_camera_target_, left_camera_info_, angle_cam, left_camera_frame_);
                 
-                broadcast_estimated_target_tf(target_pose, left_camera_frame_);
+                broadcast_estimated_target_tf(target_pose);
                 
                 response->success = true;
                 response->message = "Computed pose from LEFT camera.";
@@ -371,7 +371,7 @@ class TrashLocalizationNode : public rclcpp::Node
                  double angle_cam = compute_angle_from_camera(right_camera_target_, right_camera_info_, right_camera_frame_);
                  auto target_pose = compute_pose_from_camera_angle(right_camera_target_, right_camera_info_, angle_cam, right_camera_frame_);
                  
-                 broadcast_estimated_target_tf(target_pose, right_camera_frame_);
+                 broadcast_estimated_target_tf(target_pose);
 
                  response->success = true;
                  response->message = "Computed pose from RIGHT camera.";
@@ -969,32 +969,85 @@ class TrashLocalizationNode : public rclcpp::Node
         }
 
         void broadcast_target_tf(double angle, float distance, const std::string & lidar_frame) {
-            geometry_msgs::msg::TransformStamped target_tf;
-            target_tf.header.stamp = this->now();
-            target_tf.header.frame_id = lidar_frame;
-            target_tf.child_frame_id = "target_trash";
-            target_tf.transform.translation.x = distance * cos(angle);
-            target_tf.transform.translation.y = distance * sin(angle);
-            target_tf.transform.translation.z = 0.06;
-            target_tf.transform.rotation.x = 0.0;
-            target_tf.transform.rotation.y = 0.0;
-            target_tf.transform.rotation.z = 0.0;
-            target_tf.transform.rotation.w = 1.0;
 
+            // Create a PoseStamped in the Lidar Frame (Local)
+            geometry_msgs::msg::PoseStamped pose_in_lidar;
+            pose_in_lidar.header.stamp = rclcpp::Time(0); 
+            pose_in_lidar.header.frame_id = lidar_frame;
+            
+            // Polar to Cartesian conversion
+            pose_in_lidar.pose.position.x = distance * cos(angle);
+            pose_in_lidar.pose.position.y = distance * sin(angle);
+            pose_in_lidar.pose.position.z = 0.06;
+            pose_in_lidar.pose.orientation.w = 1.0; // Identity orientation
+
+            geometry_msgs::msg::PoseStamped pose_in_map;
+
+            try {
+                // Transform pose from lidar_frame to the 'map' frame
+                if (!tf_cam_left_buffer_->canTransform("map", lidar_frame, tf2::TimePointZero, std::chrono::seconds(1))) {
+                    RCLCPP_WARN(this->get_logger(), "Could not transform %s to map", lidar_frame.c_str());
+                    return;
+                }
+                pose_in_map = tf_cam_left_buffer_->transform(pose_in_lidar, "map");
+            } catch (const tf2::TransformException & ex) {
+                RCLCPP_WARN(this->get_logger(), "TF Error: %s", ex.what());
+                return;
+            }
+
+            // Fill the TransformStamped using the new Map coordinates
+            geometry_msgs::msg::TransformStamped target_tf;
+            
+            // IMPORTANT: The timestamp must match the data, but the frame is now Map
+            target_tf.header.stamp = pose_in_map.header.stamp; 
+            target_tf.header.frame_id = "map";           // Parent is Map
+            target_tf.child_frame_id = "target_trash";
+            
+            // Copy the transformed coordinates
+            target_tf.transform.translation.x = pose_in_map.pose.position.x;
+            target_tf.transform.translation.y = pose_in_map.pose.position.y;
+            target_tf.transform.translation.z = pose_in_map.pose.position.z;
+            target_tf.transform.rotation.x = 0;
+            target_tf.transform.rotation.y = 0;
+            target_tf.transform.rotation.z = 0;
+            target_tf.transform.rotation.w = 1;
+
+            // Broadcast tf
             tf_static_broadcaster_->sendTransform(target_tf);
         }
 
-        void broadcast_estimated_target_tf(const geometry_msgs::msg::PoseStamped & pose, const std::string & parent_frame) {
+        void broadcast_estimated_target_tf(const geometry_msgs::msg::PoseStamped & pose) {
+            geometry_msgs::msg::PoseStamped pose_in_map;
+
+            try {
+                // Ensure the transform is possible
+                if (!tf_cam_left_buffer_->canTransform("map", pose.header.frame_id, rclcpp::Time(0), std::chrono::seconds(1))) {
+                    RCLCPP_WARN(this->get_logger(), "Could not transform %s to map", pose.header.frame_id.c_str());
+                    return;
+                }
+                // Transform pose to map frame
+                // We use TimePointZero to get the latest available transform if specific time fails, 
+                // but ideally we should stick to the pose stamp. 
+                // However, static transforms or slight time diffs can cause issues, so let's try strict first then fallback or just standard transform.
+                // The broadcast_target_tf uses tf2::TimePointZero in canTransform check? No, it uses it in arguments.
+                // Actually broadcast_target_tf logic:
+                // transform(pose_in_lidar, "map") -> this uses the stamp in pose_in_lidar.
+                pose_in_map = tf_cam_left_buffer_->transform(pose, "map");
+            } catch (const tf2::TransformException & ex) {
+                RCLCPP_WARN(this->get_logger(), "TF Error in broadcast_estimated_target_tf: %s", ex.what());
+                return;
+            }
+
             geometry_msgs::msg::TransformStamped target_tf;
-            target_tf.header.stamp = this->now();
-            target_tf.header.frame_id = parent_frame;
+            target_tf.header.stamp = pose_in_map.header.stamp;
+            target_tf.header.frame_id = "map";
             target_tf.child_frame_id = "estimated_target";
             
-            target_tf.transform.translation.x = pose.pose.position.x;
-            target_tf.transform.translation.y = pose.pose.position.y;
-            target_tf.transform.translation.z = pose.pose.position.z;
+            target_tf.transform.translation.x = pose_in_map.pose.position.x;
+            target_tf.transform.translation.y = pose_in_map.pose.position.y;
+            target_tf.transform.translation.z = pose_in_map.pose.position.z;
             
-            target_tf.transform.rotation = pose.pose.orientation;
+            target_tf.transform.rotation = pose_in_map.pose.orientation;
             // Ensure valid quaternion if zero
             if (target_tf.transform.rotation.w == 0 && target_tf.transform.rotation.x == 0 && 
                 target_tf.transform.rotation.y == 0 && target_tf.transform.rotation.z == 0) {
