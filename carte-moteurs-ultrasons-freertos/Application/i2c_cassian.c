@@ -33,14 +33,10 @@ void I2C_init(){
 //		printf("error i2c init") ;
 //		return ;
 //	}
-<<<<<<< HEAD
-//	I2C_Init_Battery_Reg() ;
 //	I2C_Init_Jet_Reg() ;
 	I2C_Init_Motors_Reg(ADDR_MOTOR_R) ;
 
-=======
-	I2C_Init_Battery_Reg() ;
->>>>>>> 66fa36eb92f356b7643699dab7c18478abd0f44b
+//	I2C_Init_Battery_Reg() ;
 	//TODO init register other boards
 }
 
@@ -91,7 +87,6 @@ void I2C_Init_Battery_Reg(){
 //	HAL_Delay(10) ;
 
 }
-<<<<<<< HEAD
 
 /**
  * @brief function to set up all the registers of the motors INA237
@@ -148,8 +143,6 @@ void I2C_Init_Jet_Reg(){
 
 }
 
-=======
->>>>>>> 66fa36eb92f356b7643699dab7c18478abd0f44b
 /**
  * @brief allow to ask the INA237 the current level of a slave device
  * @param slave_addr slave address of the slave device
@@ -179,7 +172,6 @@ void I2C_Read_Power(uint8_t slave_addr, uint8_t * DataPower) {
 
 	HAL_I2C_Mem_Read(&hi2c1,((slave_addr<<1)),REG_POWER,I2C_MEMADD_SIZE_8BIT,DataPower,I2C_DATA_SIZE, I2C_TIMEOUT ) ;
 }
-<<<<<<< HEAD
 
 /**
  * @brief send the measured data through the CAN bus
@@ -207,5 +199,3 @@ void INA_Send_CAN(uint32_t id ,float power){
 	// send data to I2C
 //	CAN_COM_Send(CAN_ID_INA, buf, 8) ;
 }
-=======
->>>>>>> 66fa36eb92f356b7643699dab7c18478abd0f44b
