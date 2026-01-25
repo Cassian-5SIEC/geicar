@@ -1057,6 +1057,7 @@ class TrashLocalizationNode : public rclcpp::Node
         void clear_target_tf(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                        std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
             (void)request;
+            // Clear target_trash
             geometry_msgs::msg::TransformStamped target_tf;
             target_tf.header.stamp = this->now();
             target_tf.header.frame_id = lidar_frame_;
@@ -1069,7 +1070,21 @@ class TrashLocalizationNode : public rclcpp::Node
             target_tf.transform.rotation.z = 0.0;
             target_tf.transform.rotation.w = 1.0;
 
+            // Clear estimated_target
+            geometry_msgs::msg::TransformStamped estimated_tf;
+            estimated_tf.header.stamp = this->now();
+            estimated_tf.header.frame_id = "base_link";
+            estimated_tf.child_frame_id = "estimated_target";
+            estimated_tf.transform.translation.x = 0.0;
+            estimated_tf.transform.translation.y = 0.0;
+            estimated_tf.transform.translation.z = 0.0;
+            estimated_tf.transform.rotation.x = 0.0;
+            estimated_tf.transform.rotation.y = 0.0;
+            estimated_tf.transform.rotation.z = 0.0;
+            estimated_tf.transform.rotation.w = 1.0;
+
             tf_static_broadcaster_->sendTransform(target_tf);
+            tf_static_broadcaster_->sendTransform(estimated_tf);
             response->success = true;
             response->message = "Target TF cleared.";
         }
