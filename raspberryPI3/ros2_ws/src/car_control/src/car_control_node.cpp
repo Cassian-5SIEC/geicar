@@ -93,6 +93,10 @@ private:
                 stop = false;
                 inputSource = SOURCE_HMI;
                 RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders from HMI");
+            } else if (controlMsg->sender == "behavior_tree"){
+                start = true;
+                stop = false;
+                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders from Behavior Tree");
             }
         } else if (controlMsg->command == "manual"){
             mode = MODE_MANUAL;

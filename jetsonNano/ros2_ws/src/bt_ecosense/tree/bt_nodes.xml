@@ -23,6 +23,7 @@
 				editable="true">
 			<input_port name="target_frame"/>
 			<input_port name="standoff_distance"/>
+			<input_port name="angle_offset_deg"/>
 			<output_port name="goal_pose"/>
 		</Action>
         <Action ID="SetVel"

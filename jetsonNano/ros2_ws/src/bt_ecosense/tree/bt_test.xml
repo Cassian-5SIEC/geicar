@@ -10,6 +10,7 @@
                 <Sequence>
                     <SetGoalOffset target_frame="target_trash"
                                 standoff_distance="0.9"
+                                angle_offset_deg="15"
                                 goal_pose="{goal_pose}"/>
                     <NavToGoal goal_pose="{goal_pose}"/>
                 </Sequence>

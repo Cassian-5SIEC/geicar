@@ -30,12 +30,13 @@
         <Fallback>
           <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
           <ForceFailure>
-            <Sequence>
+            <SequenceWithMemory>
               <SetGoalOffset target_frame="estimated_target"
                              standoff_distance="1.5"
+                             angle_offset_deg="2.0"
                              goal_pose="{estimated_goal_pose}"/>
               <NavToGoal goal_pose="{estimated_goal_pose}"/>
-            </Sequence>
+            </SequenceWithMemory>
           </ForceFailure>
         </Fallback>
       </Parallel>
@@ -47,7 +48,7 @@
               <Sequence>
                 <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
                 <CheckTargetInRange name="check_target_in_range"
-                                    max_range="0.38"
+                                    max_range="0.42"
                                     min_range="0.30"/>
               </Sequence>
             </Inverter>
@@ -55,20 +56,31 @@
         </Inverter>
         <Fallback>
           <CheckTargetInRange name="check_target_in_range"
-                              max_range="0.38"
+                              max_range="0.42"
                               min_range="0.30"/>
           <ForceFailure>
-            <Sequence>
+            <SequenceWithMemory>
               <SetGoalOffset target_frame="target_trash"
-                             standoff_distance="0.9"
+                             standoff_distance="0.85"
+                             angle_offset_deg="2.0"
                              goal_pose="{goal_pose}"/>
               <NavToGoal goal_pose="{goal_pose}"/>
-            </Sequence>
+            </SequenceWithMemory>
           </ForceFailure>
         </Fallback>
       </Parallel>
-      <SubTree ID="arm_tree"
-               _autoremap="true"/>
+      <Fallback>
+        <SubTree ID="arm_tree"
+                _autoremap="true"/>
+        <Sequence>
+          <SetGoalOffset target_frame="target_trash"
+                              standoff_distance="1.30"
+                              angle_offset_deg="0.0"
+                              goal_pose="{goal_pose}"/>
+          <NavToGoal goal_pose="{goal_pose}"/>
+        </Sequence>
+      </Fallback>
+      
     </Sequence>
   </BehaviorTree>
 </root>
