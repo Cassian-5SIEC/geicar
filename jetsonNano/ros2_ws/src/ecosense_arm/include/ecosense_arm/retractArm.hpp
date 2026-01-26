@@ -16,6 +16,10 @@ class RetractArm : public StatefulActionNode {
             gripper_group_ = std::make_shared<MoveGroupInterface>(node_, "gripper");
             arm_group_->setPoseReferenceFrame("Arm_Base");
             gripper_group_->setPoseReferenceFrame("Arm_Base");
+            arm_group_->setMaxVelocityScalingFactor(1.0);
+            arm_group_->setMaxAccelerationScalingFactor(1.0);
+            gripper_group_->setMaxVelocityScalingFactor(1.0);
+            gripper_group_->setMaxAccelerationScalingFactor(1.0);
         }
         static PortsList providedPorts() 
         {
@@ -51,8 +55,8 @@ class RetractArm : public StatefulActionNode {
 
     private:
         void execute(std::atomic<bool>& isRunning, std::atomic<bool>& execSuccess){
-            gripper_group_->setNamedTarget("open_gripper");
-            gripper_group_->move();
+            // gripper_group_->setNamedTarget("open_gripper");
+            // gripper_group_->move();
             gripper_group_->setNamedTarget("close_gripper");
             gripper_group_->move();
 

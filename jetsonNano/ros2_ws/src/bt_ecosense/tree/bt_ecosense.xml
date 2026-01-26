@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="main">
+    <BehaviorTree ID="main">
+		<SubTree ID="autonomous_tree"
+				 _autoremap="true"/>
+		<!-- <ReactiveSequence>
+			<CheckForModeMsg topic_name="/mode" current_mode="{current_mode}"/>
+
+			<Switch2 variable="{current_mode}" case_1="manual" case_2="autonomous">
+				<SubTree ID="teleop_tree" _autoremap="true"/>
+				<SubTree ID="autonomous_tree" _autoremap="true"/>
+				<AlwaysFailure/> 
+			</Switch2>
+
+		</ReactiveSequence> -->
+	</BehaviorTree>
+</root>

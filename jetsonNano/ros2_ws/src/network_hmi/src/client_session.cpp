@@ -121,6 +121,7 @@ void ClientSession::handle_message(const nlohmann::json& msg)
     else if (type == "close") on_close();
     else if (type == "start") on_start();
     else if (type == "set_mode") on_set_mode(msg);
+    else if (type == "response-pickup") on_response_pickup(msg);
     else if (type == "heartbeat_ack") on_heartbeat_ack();
     else {
         RCLCPP_WARN(logger_, "Unknown TCP message type: %s", type.c_str());
@@ -169,6 +170,7 @@ void ClientSession::on_emergency_stop()
     RCLCPP_WARN(logger_, "Emergency stop received!");
     vehicle_state_->emergency_stop();
     interfaces::msg::Control control_msg;
+    // control_msg.header.stamp = tcp_server_->get_clock()->now(); // Remove invalid access
     control_msg.command = "stop";
     control_msg.sender = "network_hmi";
     tcp_server_->send_control_message(control_msg);
@@ -189,6 +191,7 @@ void ClientSession::on_start()
     RCLCPP_INFO(logger_, "Start command received");
     vehicle_state_->set_start(true);
     interfaces::msg::Control control_msg;
+    // control_msg.header.stamp = tcp_server_->get_clock()->now();
     control_msg.command = "start";
     control_msg.sender = "network_hmi";
     tcp_server_->send_control_message(control_msg);
@@ -215,6 +218,7 @@ void ClientSession::on_set_mode(const nlohmann::json& msg)
         return;
     }
     control_msg.sender = "network_hmi";
+    // control_msg.header.stamp = tcp_server_->get_clock()->now();
     tcp_server_->send_control_message(control_msg);
     json response = {{"ok", true}, {"message", "Mode change acknowledged"}};
     send_tcp_message(response.dump());
@@ -226,6 +230,24 @@ void ClientSession::on_heartbeat_ack()
         std::chrono::steady_clock::now().time_since_epoch()).count();
     long long rtt_ms = now - last_heartbeat_ms_.load();
     RCLCPP_INFO(logger_, "Heartbeat RTT: %lld ms", rtt_ms);
+}
+
+void ClientSession::on_response_pickup(const nlohmann::json& msg)
+{
+    bool response = msg.value("response", false);
+    RCLCPP_INFO(logger_, "Pickup response received: %s", response ? "YES" : "NO");
+
+    interfaces::msg::Control control_msg;
+    // control_msg.header.stamp = tcp_server_->get_clock()->now();
+    control_msg.sender = "network_hmi"; // Standard sender
+    if (response) {
+        control_msg.command = "accept-pickup";
+    } else {
+        control_msg.command = "refuse-pickup";
+    }
+
+    tcp_server_->send_control_message(control_msg);
+    tcp_server_->send_trash_response(control_msg);
 }
 
 // --- Networking Helpers ---
@@ -285,6 +307,28 @@ bool ClientSession::send_tcp_message(const std::string &msg)
 void ClientSession::public_send_tcp_message(const std::string& msg)
 {
     send_tcp_message(msg);
+}
+
+bool ClientSession::send_raw_tcp_message(const std::string& msg)
+{
+    // Sends the message string exactly as is, WITHOUT appending a newline.
+    // This expects 'msg' to already have the delimiter if needed.
+    size_t total_sent = 0;
+    const char *data = msg.data();
+    size_t len = msg.size();
+
+    while (total_sent < len) {
+        ssize_t sent = ::send(socket_, data + total_sent, len - total_sent, 0);
+        if (sent < 0) {
+            if (errno == EINTR) { continue; }
+            if (session_alive_.load()) {
+                RCLCPP_WARN(logger_, "TCP raw send error: %s", strerror(errno));
+            }
+            return false;
+        }
+        total_sent += static_cast<size_t>(sent);
+    }
+    return true;
 }
 
 int ClientSession::get_socket() const

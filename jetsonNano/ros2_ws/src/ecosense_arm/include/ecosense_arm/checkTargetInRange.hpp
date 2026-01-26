@@ -16,13 +16,18 @@ class CheckTargetInRange : public StatefulActionNode {
         }
         static PortsList providedPorts() 
         {
-            return {};
+            return {
+                InputPort<double>("max_range", 0.42, "Maximum reachable range of the arm in meters"),
+                InputPort<double>("min_range", 0.30, "Minimum reachable range of the arm in meters"),
+            };
         }
 
 
         NodeStatus onStart() override {
             isRunning_ = true;
             execSuccess_ = false;
+            ARM_MAX_RANGE = getInput<double>("max_range").value();
+            ARM_MIN_RANGE = getInput<double>("min_range").value();
             exec_thread_ = std::make_shared<std::thread>(std::bind(&CheckTargetInRange::checkTarget, 
                                                             this, 
                                                             std::ref(isRunning_),
@@ -69,12 +74,12 @@ class CheckTargetInRange : public StatefulActionNode {
             double dy = target_pose.pose.position.y;;
             double distance = std::sqrt(dx*dx + dy*dy);
             if (distance > ARM_MAX_RANGE || distance < ARM_MIN_RANGE){
-                RCLCPP_WARN(node_->get_logger(), "Target is out of range: %.2f meters", distance);
+                RCLCPP_WARN(node_->get_logger(), "Target is out of range: %.3f meters", distance);
                 execSuccess = false;
                 isRunning = false;
                 return;
             }
-            RCLCPP_INFO(node_->get_logger(), "Target is within range: %.2f meters", distance);
+            RCLCPP_INFO(node_->get_logger(), "Target is within range: %.3f meters", distance);
             isRunning = false;
             execSuccess = true;
             return;
@@ -90,6 +95,6 @@ class CheckTargetInRange : public StatefulActionNode {
         std::unique_ptr<tf2_ros::Buffer> tf_target_buffer_;
         std::shared_ptr<tf2_ros::TransformListener> tf_target_listener_{nullptr};
 
-        const double ARM_MAX_RANGE = 0.30; // 30 cm
-        const double ARM_MIN_RANGE = 0.20; // 20 cm
+        double ARM_MAX_RANGE = 0.42;
+        double ARM_MIN_RANGE = 0.30;
 };
