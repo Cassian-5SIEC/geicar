@@ -10,16 +10,11 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(geometry_msgs  REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
 
-add_executable(safety_node src/emergency_brake_node.cpp)
-ament_target_dependencies(safety_node rclcpp interfaces std_msgs sensor_msgs geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
+add_executable(check_recent_request_node src/check_recent_request_node.cpp)
+ament_target_dependencies(check_recent_request_node rclcpp interfaces std_msgs)
 
-install(TARGETS safety_node 
+install(TARGETS check_recent_request_node 
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
