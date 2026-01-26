@@ -28,7 +28,7 @@ extern "C" {
 #define CAN_INA_MOTR	0x02
 #define CAN_INA_MOTL	0x03
 #define CAN_INA_JET		0x04
-#define ADDR_JETSON	0x45 /* 7bits slave address of the jetson INA */
+
 
 //INA register definition
 #define REG_CONFIG	   			0x00
@@ -48,7 +48,7 @@ extern "C" {
 #define REG_PWR_LIMIT			0x11
 #define REG_MANAFACTURER_ID		0x3E
 
-#define I2C_TIMEOUT 			10
+#define I2C_TIMEOUT 			100
 
 typedef struct{
 	AppMessage_typeDef INA_id ;

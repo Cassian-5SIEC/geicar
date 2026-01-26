@@ -33,8 +33,8 @@ void I2C_init(){
 //		printf("error i2c init") ;
 //		return ;
 //	}
-//	I2C_Init_Jet_Reg() ;
-	I2C_Init_Motors_Reg(ADDR_MOTOR_R) ;
+	I2C_Init_Jet_Reg() ;
+//	I2C_Init_Motors_Reg(ADDR_MOTOR_R) ;
 
 //	I2C_Init_Battery_Reg() ;
 	//TODO init register other boards

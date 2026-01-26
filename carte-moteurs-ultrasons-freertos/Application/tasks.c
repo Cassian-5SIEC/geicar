@@ -473,28 +473,22 @@ static uint16_t power_temp ; //* temporary variable to convert the hexa value in
 static void INABatteryTimerCallback(TimerHandle_t xTimer) {
 	/************JETSON******************/
 	/* read current value*/
-	I2C_Read_Current(ADDR_MOTOR_R, data_c ) ;
-	/* read current value*/
-	I2C_Read_Current(ADDR_BATTERY, data_c ) ;
+	I2C_Read_Current(ADDR_JETSON, data_c ) ;
 	//calculate the real value
 	current_temp = data_c[0]<<8 | data_c[1] ;
 	current = 10.0f * ((float)current_temp) / 32768.0f ;  //10 * current_read / 2^15
 
 	/* read voltage value */
-	I2C_Read_Voltage(ADDR_MOTOR_R, data_v ) ;
-	I2C_Read_Voltage(ADDR_BATTERY, data_v ) ;
+	I2C_Read_Voltage(ADDR_JETSON, data_v ) ;
 	voltage_temp = data_v[0]<<8 | data_v[1] ;
 	voltage = (float)voltage_temp * 0.003125f ; //not sure that the computation work
 
 	/* read power */
-	I2C_Read_Power(ADDR_MOTOR_R, data_p ) ;
+	I2C_Read_Power(ADDR_JETSON, data_p ) ;
 	power_temp =data_p[0]<<8 | data_p[1] ;
 	power = 0.2f * 10.0f * (float)power_temp /32768.0f ;
 
-	INA_Send_CAN(CAN_INA_MOTR,power) ;
-	I2C_Read_Power(ADDR_BATTERY, data_p ) ;
-	power_temp =data_p[0]<<8 | data_p[1] ;
-	power = 0.2 * 10.0f * (float)power_temp /32768.0f ;
+	INA_Send_CAN(CAN_INA_BATT,power) ;
 
 }
 
