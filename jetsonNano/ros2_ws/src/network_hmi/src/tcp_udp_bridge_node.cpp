@@ -43,7 +43,6 @@ TcpUdpBridgeNode::TcpUdpBridgeNode()
     RCLCPP_INFO(this->get_logger(), " - Image Topic: %s", image_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - General Data Topic: %s", general_data_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - Map Topic: %s", map_topic_.c_str());
-    RCLCPP_INFO(this->get_logger(), " - Map Topic: %s", map_topic_.c_str());
     RCLCPP_INFO(this->get_logger(), " - Control Topic: %s", control_topic_.c_str());
 
     // Initialize rate limit parameters (default 1Hz as requested)
@@ -198,7 +197,11 @@ void TcpUdpBridgeNode::general_data_callback(const interfaces::msg::GeneralData:
 
     json general_data_msg = {
         {"type", "general_data"},
-        {"battery_level", msg->battery_level}
+        {"battery_level", msg->battery_level},
+        {"battery_power", msg->power_batt},
+        {"left_motor_power", msg->power_mg},
+        {"right_motor_power", msg->power_md},
+        {"jetson_power", msg->power_jet}
     };
     
     udp_sender_->send_json(general_data_msg.dump(), dest);
