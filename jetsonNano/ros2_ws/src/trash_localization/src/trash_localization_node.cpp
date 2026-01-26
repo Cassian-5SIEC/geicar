@@ -120,6 +120,12 @@ class TrashLocalizationNode : public rclcpp::Node
                 std::bind(&TrashLocalizationNode::get_target_angle, this, std::placeholders::_1, std::placeholders::_2)
             );
 
+            // Service to compute pose from camera and publish TF
+            compute_pose_from_camera_service_ = this->create_service<std_srvs::srv::Trigger>(
+                "trash_localization_node/compute_pose_from_camera",
+                std::bind(&TrashLocalizationNode::compute_pose_from_camera_callback, this, std::placeholders::_1, std::placeholders::_2)
+            );
+
             // Publisher for search zone markers
             marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("trash_localization_node/search_zone", 10);
 
@@ -325,6 +331,55 @@ class TrashLocalizationNode : public rclcpp::Node
             // Return the latest computed angle in radians as the message
             response->success = true;
             response->message = std::to_string(latest_target_angle_);
+        }
+
+        void compute_pose_from_camera_callback(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                                               std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+            (void)request;
+            bool left_valid = false;
+            bool right_valid = false;
+            double now_s = this->now().seconds();
+
+            // Check Right Camera Validity 
+            if (right_camera_target_.header.stamp.sec != 0) {
+                 double right_time = rclcpp::Time(right_camera_target_.header.stamp).seconds();
+                 if ((now_s - right_time) < tf_timeout_) {
+                     right_valid = true;
+                 }
+            }
+
+            if (right_valid) {
+                 double angle_cam = compute_angle_from_camera(right_camera_target_, right_camera_info_, right_camera_frame_);
+                 auto target_pose = compute_pose_from_camera_angle(right_camera_target_, right_camera_info_, angle_cam, right_camera_frame_);
+                 
+                 broadcast_estimated_target_tf(target_pose);
+
+                 response->success = true;
+                 response->message = "Computed pose from RIGHT camera.";
+                 return;
+            }
+
+            // Check Left Camera Validity if Right is invalid
+            if (left_camera_target_.header.stamp.sec != 0) {
+                 double left_time = rclcpp::Time(left_camera_target_.header.stamp).seconds();
+                 if ((now_s - left_time) < tf_timeout_) {
+                     left_valid = true;
+                 }
+            }
+
+            if (left_valid) {
+                double angle_cam = compute_angle_from_camera(left_camera_target_, left_camera_info_, left_camera_frame_);
+                auto target_pose = compute_pose_from_camera_angle(left_camera_target_, left_camera_info_, angle_cam, left_camera_frame_);
+                
+                broadcast_estimated_target_tf(target_pose);
+                
+                response->success = true;
+                response->message = "Computed pose from LEFT camera.";
+                return;
+            }
+
+            response->success = false;
+            response->message = "No valid camera data available.";
         }
 
         void process_data(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
@@ -914,24 +969,95 @@ class TrashLocalizationNode : public rclcpp::Node
         }
 
         void broadcast_target_tf(double angle, float distance, const std::string & lidar_frame) {
-            geometry_msgs::msg::TransformStamped target_tf;
-            target_tf.header.stamp = this->now();
-            target_tf.header.frame_id = lidar_frame;
-            target_tf.child_frame_id = "target_trash";
-            target_tf.transform.translation.x = distance * cos(angle);
-            target_tf.transform.translation.y = distance * sin(angle);
-            target_tf.transform.translation.z = 0.06;
-            target_tf.transform.rotation.x = 0.0;
-            target_tf.transform.rotation.y = 0.0;
-            target_tf.transform.rotation.z = 0.0;
-            target_tf.transform.rotation.w = 1.0;
 
+            // Create a PoseStamped in the Lidar Frame (Local)
+            geometry_msgs::msg::PoseStamped pose_in_lidar;
+            pose_in_lidar.header.stamp = rclcpp::Time(0); 
+            pose_in_lidar.header.frame_id = lidar_frame;
+            
+            // Polar to Cartesian conversion
+            pose_in_lidar.pose.position.x = distance * cos(angle);
+            pose_in_lidar.pose.position.y = distance * sin(angle);
+            pose_in_lidar.pose.position.z = 0.06;
+            pose_in_lidar.pose.orientation.w = 1.0; // Identity orientation
+
+            geometry_msgs::msg::PoseStamped pose_in_map;
+
+            try {
+                // Transform pose from lidar_frame to the 'map' frame
+                if (!tf_cam_left_buffer_->canTransform("map", lidar_frame, tf2::TimePointZero, std::chrono::seconds(1))) {
+                    RCLCPP_WARN(this->get_logger(), "Could not transform %s to map", lidar_frame.c_str());
+                    return;
+                }
+                pose_in_map = tf_cam_left_buffer_->transform(pose_in_lidar, "map");
+            } catch (const tf2::TransformException & ex) {
+                RCLCPP_WARN(this->get_logger(), "TF Error: %s", ex.what());
+                return;
+            }
+
+            // Fill the TransformStamped using the new Map coordinates
+            geometry_msgs::msg::TransformStamped target_tf;
+            
+            // IMPORTANT: The timestamp must match the data, but the frame is now Map
+            target_tf.header.stamp = pose_in_map.header.stamp; 
+            target_tf.header.frame_id = "map";           // Parent is Map
+            target_tf.child_frame_id = "target_trash";
+            
+            // Copy the transformed coordinates
+            target_tf.transform.translation.x = pose_in_map.pose.position.x;
+            target_tf.transform.translation.y = pose_in_map.pose.position.y;
+            target_tf.transform.translation.z = pose_in_map.pose.position.z;
+            target_tf.transform.rotation.x = 0;
+            target_tf.transform.rotation.y = 0;
+            target_tf.transform.rotation.z = 0;
+            target_tf.transform.rotation.w = 1;
+
+            // Broadcast tf
+            tf_static_broadcaster_->sendTransform(target_tf);
+        }
+
+        void broadcast_estimated_target_tf(const geometry_msgs::msg::PoseStamped & pose) {
+            geometry_msgs::msg::PoseStamped pose_in_map;
+
+            try {
+                // Ensure the transform is possible
+                if (!tf_cam_left_buffer_->canTransform("map", pose.header.frame_id, rclcpp::Time(0), std::chrono::seconds(1))) {
+                    RCLCPP_WARN(this->get_logger(), "Could not transform %s to map", pose.header.frame_id.c_str());
+                    return;
+                }
+                // Transform pose to map frame
+                // We use TimePointZero to get the latest available transform if specific time fails, 
+                // but ideally we should stick to the pose stamp. 
+                // However, static transforms or slight time diffs can cause issues, so let's try strict first then fallback or just standard transform.
+                // The broadcast_target_tf uses tf2::TimePointZero in canTransform check? No, it uses it in arguments.
+                // Actually broadcast_target_tf logic:
+                // transform(pose_in_lidar, "map") -> this uses the stamp in pose_in_lidar.
+                pose_in_map = tf_cam_left_buffer_->transform(pose, "map");
+            } catch (const tf2::TransformException & ex) {
+                RCLCPP_WARN(this->get_logger(), "TF Error in broadcast_estimated_target_tf: %s", ex.what());
+                return;
+            }
+
+            geometry_msgs::msg::TransformStamped target_tf;
+            target_tf.header.stamp = pose_in_map.header.stamp;
+            target_tf.header.frame_id = "map";
+            target_tf.child_frame_id = "estimated_target";
+            
+            target_tf.transform.translation.x = pose_in_map.pose.position.x;
+            target_tf.transform.translation.y = pose_in_map.pose.position.y;
+            target_tf.transform.translation.z = 0.0;
+            
+            target_tf.transform.rotation.x = 0;
+            target_tf.transform.rotation.y = 0;
+            target_tf.transform.rotation.z = 0;
+            target_tf.transform.rotation.w = 1;
             tf_static_broadcaster_->sendTransform(target_tf);
         }
 
         void clear_target_tf(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                        std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
             (void)request;
+            // Clear target_trash
             geometry_msgs::msg::TransformStamped target_tf;
             target_tf.header.stamp = this->now();
             target_tf.header.frame_id = lidar_frame_;
@@ -944,7 +1070,21 @@ class TrashLocalizationNode : public rclcpp::Node
             target_tf.transform.rotation.z = 0.0;
             target_tf.transform.rotation.w = 1.0;
 
+            // Clear estimated_target
+            geometry_msgs::msg::TransformStamped estimated_tf;
+            estimated_tf.header.stamp = this->now();
+            estimated_tf.header.frame_id = "base_link";
+            estimated_tf.child_frame_id = "estimated_target";
+            estimated_tf.transform.translation.x = 0.0;
+            estimated_tf.transform.translation.y = 0.0;
+            estimated_tf.transform.translation.z = 0.0;
+            estimated_tf.transform.rotation.x = 0.0;
+            estimated_tf.transform.rotation.y = 0.0;
+            estimated_tf.transform.rotation.z = 0.0;
+            estimated_tf.transform.rotation.w = 1.0;
+
             tf_static_broadcaster_->sendTransform(target_tf);
+            tf_static_broadcaster_->sendTransform(estimated_tf);
             response->success = true;
             response->message = "Target TF cleared.";
         }
@@ -1087,6 +1227,7 @@ class TrashLocalizationNode : public rclcpp::Node
         rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr publish_target_tf_service_;
         rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr clear_target_tf_service_;
         rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr get_target_angle_service_;
+        rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr compute_pose_from_camera_service_;
 
         std::string left_camera_frame_;
         std::string right_camera_frame_;
