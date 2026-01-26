@@ -6,10 +6,10 @@
 				<SendControlMsg name="send_stop_msg"
 						topic_name="/control_msg"
 						command="stop"/>
-				<Sleep msec="2000"/>
+				<Sleep msec="1000"/>
 				<TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
 				<CheckTargetInRange name="check_target_in_range"
-									max_range="0.38"
+									max_range="0.42"
 									min_range="0.30"/>
 				<Fallback>
 						<ExecutePickPlace name="pick_place_action"
