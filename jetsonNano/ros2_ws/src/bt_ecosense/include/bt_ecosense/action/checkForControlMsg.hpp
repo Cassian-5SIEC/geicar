@@ -15,7 +15,8 @@ class CheckForControlMsg : public RosTopicSubNode<interfaces::msg::Control>
     static PortsList providedPorts()
     {
         return providedBasicPorts({
-            InputPort<std::string>("expected_command", "Expected control command to read"),
+            InputPort<std::string>("expected_field", "Expected control command to read"),
+            OutputPort<std::string>("received_command", "The received control command"),
         });
     }
 
@@ -24,10 +25,14 @@ class CheckForControlMsg : public RosTopicSubNode<interfaces::msg::Control>
         // empty if no new message received, since the last tick
         if(last_msg)
         {
-            Expected<std::string> expected_command = getInput<std::string>("expected_command");
-            if(expected_command && last_msg->command == expected_command.value())
+            Expected<std::string> expected_field = getInput<std::string>("expected_field");
+            if(expected_field)
             {
-                return NodeStatus::SUCCESS;
+                if (last_msg->command == expected_field.value())
+                {
+                    setOutput("received_command", last_msg->command);
+                    return NodeStatus::SUCCESS;
+                }
             }
         }
         return NodeStatus::FAILURE;

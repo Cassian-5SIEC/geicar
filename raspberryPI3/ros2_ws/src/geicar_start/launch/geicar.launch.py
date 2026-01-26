@@ -167,7 +167,7 @@ def generate_launch_description():
     ld.add_action(system_check_node)
     #ld.add_action(robot_state_publisher_node)
     ld.add_action(vehicle_controller_node)
-    ld.add_action(safety_node)
+    #ld.add_action(safety_node)
 
 
     return ld

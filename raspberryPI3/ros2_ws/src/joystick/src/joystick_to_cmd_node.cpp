@@ -82,7 +82,7 @@ private:
         buttonB = joy.buttons[buttonsMap.find("B")->second];    
         buttonA = joy.buttons[buttonsMap.find("A")->second];  
         buttonY = joy.buttons[buttonsMap.find("Y")->second]; 
-        
+        buttonX = joy.buttons[buttonsMap.find("X")->second];
 
         axisRT = joy.axes[axisMap.find("RT")->second];      //Motors (go forward)
         axisLT = joy.axes[axisMap.find("LT")->second];      //Motors (go backward)
@@ -112,7 +112,7 @@ private:
             mode = -1;
         
 
-        if (buttonA || buttonY || buttonDpadBottom){
+        if (buttonA || buttonY || buttonDpadBottom || buttonX){
             if (buttonY){
                 if (mode != 0) {
                     auto controlMsg = interfaces::msg::Control();
@@ -140,6 +140,14 @@ private:
                 }
                 mode = 2;
                 start = false;
+            }
+            else if (buttonX){
+                auto controlMsg = interfaces::msg::Control();
+                // Add header timestamp
+                controlMsg.header.stamp = this->now();
+                controlMsg.command = "accept-pickup";
+                controlMsg.sender = "xbox";
+                publisher_control_msg_->publish(controlMsg);
             }
         }
 
@@ -209,7 +217,7 @@ private:
     //Joystick variables
     map<string,int> axisMap;
     map<string,int> buttonsMap;
-    bool buttonB, buttonStart, buttonA, buttonY, buttonDpadBottom, buttonDpadLeft ;
+    bool buttonB, buttonStart, buttonA, buttonY, buttonDpadBottom, buttonDpadLeft, buttonX ;
     
     float axisRT, axisLT, axisLS_X;
 

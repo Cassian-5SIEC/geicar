@@ -97,7 +97,7 @@ class ExecutePickPlace : public StatefulActionNode {
         //     }
         //     isRunning = false;
         // }
-1"
+        
         void execute(std::atomic<bool>& isRunning, std::atomic<bool>& execSuccess){
             geometry_msgs::msg::PoseStamped ready_pose;
             geometry_msgs::msg::PoseStamped target_pose;

@@ -15,6 +15,7 @@
 #include "interfaces/msg/emergency_stop_request.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "std_msgs/msg/float64.hpp"
+#include "std_msgs/msg/string.hpp"
 
 #include "std_srvs/srv/empty.hpp"
 
@@ -47,6 +48,7 @@ public:
 
         publisher_can_= this->create_publisher<interfaces::msg::MotorsOrder>("motors_order", 10);
 
+        publisher_mode_= this->create_publisher<std_msgs::msg::String>("mode", 10);
 
         emergency_subscriber_ = this->create_subscription<interfaces::msg::EmergencyStopRequest>(
             "emergency_stop_request", 10, std::bind(&car_control::emergency_callback, this, _1));
@@ -91,6 +93,10 @@ private:
                 stop = false;
                 inputSource = SOURCE_HMI;
                 RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders from HMI");
+            } else if (controlMsg->sender == "behavior_tree"){
+                start = true;
+                stop = false;
+                RCLCPP_INFO(this->get_logger(), "[CAR_CONTROL] Start sending motor orders from Behavior Tree");
             }
         } else if (controlMsg->command == "manual"){
             mode = MODE_MANUAL;
@@ -186,6 +192,13 @@ private:
         // steering already computed above
         currentAngle = requestedSteerAngle;
         publisher_can_->publish(motorsOrder);
+        auto mode_msg = std_msgs::msg::String();
+        if (mode == MODE_AUTONOMOUS){
+            mode_msg.data = "autonomous";
+        } else {
+            mode_msg.data = "manual";
+        }
+        publisher_mode_->publish(mode_msg);
     }
 
     /* ------------ Receive orders from Autonomous stack -----------*/
@@ -246,7 +259,7 @@ private:
 
     //Publishers
     rclcpp::Publisher<interfaces::msg::MotorsOrder>::SharedPtr publisher_can_;
-
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_mode_;
     //Subscribers
     rclcpp::Subscription<interfaces::msg::JoystickOrder>::SharedPtr subscription_joystick_order_;
     rclcpp::Subscription<interfaces::msg::JoystickOrder>::SharedPtr subscription_hmi_order_;

@@ -36,29 +36,5 @@ class SetVel : public RosTopicPubNode<geometry_msgs::msg::Twist>
 
       return true;
     }
-    // NodeStatus onTick() override
-    // {
-    //   auto msg = std::make_shared<geometry_msgs::msg::Twist>();
-
-    //   double linear_x;
-    //   if (!getInput<double>("linear_x", linear_x)) {
-    //     RCLCPP_ERROR(logger(), "Missing required input [linear_x]");
-    //     return NodeStatus::FAILURE;
-    //   }
-
-    //   double angular_z;
-    //   if (!getInput<double>("angular_z", angular_z)) {
-    //     RCLCPP_ERROR(logger(), "Missing required input [angular_z]");
-    //     return NodeStatus::FAILURE;
-    //   }
-
-    //   msg->linear.x = linear_x;
-    //   msg->angular.z = angular_z;
-
-    //   // Publish the message
-    //   publish(msg);
-
-    //   return NodeStatus::SUCCESS;
-    // }
 };
 

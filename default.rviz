@@ -103,6 +103,8 @@ Visualization Manager:
           Value: true
         rplidar_link:
           Value: true
+        target_trash:
+          Value: true
         ultrasonic_back_central_link:
           Value: true
         ultrasonic_back_left_link:
@@ -119,7 +121,7 @@ Visualization Manager:
       Name: TF
       Show Arrows: true
       Show Axes: true
-      Show Names: false
+      Show Names: true
       Tree:
         map:
           odom:
@@ -140,7 +142,8 @@ Visualization Manager:
               imu_link:
                 {}
               ld_lidar_link:
-                {}
+                target_trash:
+                  {}
               rplidar_link:
                 {}
               ultrasonic_back_central_link:
@@ -430,7 +433,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -0.009999638423323631
+      Angle: -2.1000001430511475
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -440,11 +443,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 150.97274780273438
+      Scale: 284.0042724609375
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.7208188772201538
-      Y: -0.8456395864486694
+      X: 1.4811369180679321
+      Y: -0.09768376499414444
     Saved:
       - Class: rviz_default_plugins/Orbit
         Distance: 29.888111114501953

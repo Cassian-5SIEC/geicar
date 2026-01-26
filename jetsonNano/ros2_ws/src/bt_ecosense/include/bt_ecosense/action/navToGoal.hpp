@@ -48,5 +48,25 @@ class NavToGoal : public BT::RosActionNode<nav2_msgs::action::NavigateToPose> {
             RCLCPP_ERROR(logger(), "Error: %d", error);
             return NodeStatus::FAILURE;
         }
+
+        void halt() override 
+        {
+            if (status() == NodeStatus::RUNNING) {
+                try {
+                    // Call the base class logic (which tries to cancel the goal)
+                    RosActionNode<nav2_msgs::action::NavigateToPose>::halt();
+                } 
+                catch (const rclcpp_action::exceptions::UnknownGoalHandleError& ex) {
+                    // Swallow this specific error. It means the goal is already done.
+                    RCLCPP_WARN(logger(), "NavToGoal: Ignored UnknownGoalHandleError during halt.");
+                }
+                catch (const std::exception& ex) {
+                    RCLCPP_WARN(logger(), "NavToGoal: Exception during halt: %s", ex.what());
+                }
+            }
+            
+            // Ensure the status is definitely set to IDLE so the Tree can proceed
+            resetStatus();
+        }
 };
                     

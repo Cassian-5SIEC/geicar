@@ -8,6 +8,7 @@
 #include "ecosense_arm/bt_arm_nodes.hpp"
 // #include "bt_ecosense/action/trash_localization.hpp"
 #include "bt_ecosense/bt_ecosense.hpp"
+#include "std_msgs/msg/string.hpp"
 
 class BehaviorTreeExecutor : public rclcpp::Node {
     public:
@@ -43,8 +44,10 @@ class BehaviorTreeExecutor : public rclcpp::Node {
             factory_->registerNodeType<SendControlMsg>("SendControlMsg", node);
             factory_->registerNodeType<CheckForControlMsg>("CheckForControlMsg", node);
             factory_->registerNodeType<CheckForRecentRequest>("CheckForRecentRequest", node);
+            factory_->registerNodeType<CheckForModeMsg>("CheckForModeMsg", node);
             // Trash localization service
             factory_->registerNodeType<TrashLocalizationService>("TrashLocalizationService", node);
+            factory_->registerNodeType<CheckTrashInCenter>("CheckTrashInCenter", node);
             // Arm related nodes
             factory_->registerNodeType<ExecutePickPlace>("ExecutePickPlace", node);
             factory_->registerNodeType<CheckTargetInRange>("CheckTargetInRange", node);
