@@ -17,12 +17,15 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(vision_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(OpenCV REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
 add_executable(trash_localization_node src/trash_localization_node.cpp)
-ament_target_dependencies(trash_localization_node rclcpp std_msgs interfaces sensor_msgs geometry_msgs tf2_ros tf2 tf2_geometry_msgs vision_msgs std_srvs)
+ament_target_dependencies(trash_localization_node rclcpp std_msgs interfaces sensor_msgs geometry_msgs tf2_ros tf2 tf2_geometry_msgs vision_msgs std_srvs visualization_msgs)
+target_link_libraries(trash_localization_node ${OpenCV_LIBRARIES})
 
 install(TARGETS
   trash_localization_node

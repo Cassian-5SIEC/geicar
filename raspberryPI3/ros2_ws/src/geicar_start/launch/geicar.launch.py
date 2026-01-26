@@ -141,6 +141,13 @@ def generate_launch_description():
                                         }],
                                 output='screen')
 
+    safety_node = Node(
+        package="safety_node",
+        executable="safety_node",
+        output='screen',
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+    )
+
     # Arguments Actions
     # ld.add_action(disable_robot_state_publisher_arg)
     ld.add_action(disable_car_control_arg)
@@ -160,6 +167,7 @@ def generate_launch_description():
     ld.add_action(system_check_node)
     #ld.add_action(robot_state_publisher_node)
     ld.add_action(vehicle_controller_node)
+    ld.add_action(safety_node)
 
 
     return ld

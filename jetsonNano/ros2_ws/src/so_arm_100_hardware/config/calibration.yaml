@@ -2,8 +2,8 @@ timestamp: '2025-02-02T13:26:42.812769'
 joints:
   Shoulder_Rotation:
     max:
-      pos: -1.57079632679489661923
-      ticks: 3053 #right
+      pos: -1.70
+      ticks: 3165 #right
       speed: 0
       load: -1
     center:

@@ -31,12 +31,15 @@ public:
     void start();
     void stop();
     void send_control_message(const interfaces::msg::Control & msg);
+    void send_trash_response(const interfaces::msg::Control & msg);
     void remove_client_session(int socket);
+    rclcpp::Clock::SharedPtr get_clock();
 
 private:
     void accept_loop();
 
     rclcpp::Logger logger_;
+    rclcpp::Clock::SharedPtr clock_;
     int port_;
     int server_fd_ = -1;
     std::shared_ptr<SharedClientInfo> client_info_;
@@ -44,6 +47,7 @@ private:
     std::string control_topic_;
 
     rclcpp::Publisher<interfaces::msg::Control>::SharedPtr control_pub_;
+    rclcpp::Publisher<interfaces::msg::Control>::SharedPtr trash_response_pub_;
     rclcpp::Subscription<interfaces::msg::Control>::SharedPtr control_sub_;
 
     std::thread thread_;

@@ -19,7 +19,7 @@
     <xacro:property name="wheel_right_steer_limit_right" value="0.453785605519"/> <!-- 26 degrees -->
 
     <xacro:property name="arm_mount_xoff" value="0.6"/>
-    <xacro:property name="arm_mount_yoff" value="0.05"/>
+    <xacro:property name="arm_mount_yoff" value="0.08"/>
     <xacro:property name="arm_mount_zoff" value="0.0"/>
     <!-- Define sensors constants -->
     <!-- RPLidar -->
@@ -77,8 +77,8 @@
     <xacro:property name="camera_right_rotz" value="0.08525175128691662"/>
 
     <!-- LD Lidar -->
-    <xacro:property name="ld_lidar_xoff" value="0.68"/>
-    <xacro:property name="ld_lidar_yoff" value="0.0"/>
+    <xacro:property name="ld_lidar_xoff" value="0.67"/>
+    <xacro:property name="ld_lidar_yoff" value="0.01"/>
     <xacro:property name="ld_lidar_zoff" value="0.0"/>
     <xacro:property name="ld_lidar_rotx" value="0.0"/>
     <xacro:property name="ld_lidar_roty" value="0.0"/>
