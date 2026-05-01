@@ -37,6 +37,7 @@ class CheckRecentRequest : public rclcpp::Node
     {
         if (msg->command == expected_command_){
             last_msg_ = msg;
+            RCLCPP_INFO(this->get_logger(), "Received expected command: %s at %u", msg->command.c_str(), msg->header.stamp.sec);
         }
     }
 

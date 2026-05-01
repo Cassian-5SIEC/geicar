@@ -261,7 +261,7 @@ def generate_launch_description():
         package='trash_localization',
         executable='trash_localization_node',
         name='trash_localization_node',
-        output='screen',
+        output='log',
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
     )
 
@@ -269,7 +269,7 @@ def generate_launch_description():
         package='bt_ecosense',
         executable='bt_ecosense_node',
         name='bt_ecosense_node',
-        output='screen',
+        output='log',
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
     )
 
@@ -318,11 +318,11 @@ def generate_launch_description():
         ai_node,
         arm_hardware_launch,
         arm_moveit_launch,
-        trash_localization_node,
-        behavior_tree_node,
+        # trash_localization_node,
+        # behavior_tree_node,
         check_recent_request_node,
-        # slam_toolbox_launch_file,
-        delay_nav2_launch
+        slam_toolbox_launch_file,
+        # delay_nav2_launch
     ]
 
     # --- Add Actions to Launch Description ---

@@ -10,12 +10,12 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
 add_executable(check_recent_request_node src/check_recent_request_node.cpp)
 ament_target_dependencies(check_recent_request_node rclcpp interfaces std_msgs)
-
-install(TARGETS check_recent_request_node 
-  DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
