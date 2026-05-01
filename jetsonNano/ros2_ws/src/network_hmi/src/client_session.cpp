@@ -170,7 +170,7 @@ void ClientSession::on_emergency_stop()
     RCLCPP_WARN(logger_, "Emergency stop received!");
     vehicle_state_->emergency_stop();
     interfaces::msg::Control control_msg;
-    control_msg.header.stamp = tcp_server_->get_clock()->now(); // Remove invalid access
+    // control_msg.header.stamp = tcp_server_->get_clock()->now(); // Remove invalid access
     control_msg.command = "stop";
     control_msg.sender = "network_hmi";
     tcp_server_->send_control_message(control_msg);
@@ -182,7 +182,7 @@ void ClientSession::on_close()
 {
     RCLCPP_INFO(logger_, "Client requested close");
     vehicle_state_->stop_if_not_autonomous();
-    This will cause the main read() loop to exit with an error
+    // This will cause the main read() loop to exit with an error
     shutdown(socket_, SHUT_RDWR); 
 }
 
@@ -191,7 +191,7 @@ void ClientSession::on_start()
     RCLCPP_INFO(logger_, "Start command received");
     vehicle_state_->set_start(true);
     interfaces::msg::Control control_msg;
-    control_msg.header.stamp = tcp_server_->get_clock()->now();
+    // control_msg.header.stamp = tcp_server_->get_clock()->now();
     control_msg.command = "start";
     control_msg.sender = "network_hmi";
     tcp_server_->send_control_message(control_msg);
@@ -218,7 +218,7 @@ void ClientSession::on_set_mode(const nlohmann::json& msg)
         return;
     }
     control_msg.sender = "network_hmi";
-    control_msg.header.stamp = tcp_server_->get_clock()->now();
+    // control_msg.header.stamp = tcp_server_->get_clock()->now();
     tcp_server_->send_control_message(control_msg);
     json response = {{"ok", true}, {"message", "Mode change acknowledged"}};
     send_tcp_message(response.dump());
