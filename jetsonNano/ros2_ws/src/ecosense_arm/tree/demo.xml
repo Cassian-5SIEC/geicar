@@ -7,7 +7,7 @@
                 <ForceSuccess>
                     <CheckTargetInRange name="check_target_in_range"
                                         max_range="0.38"
-                                        min_range="0.30"/>
+                                        min_range="0.32"/>
                 </ForceSuccess>
                 <Fallback>
                     <ExecutePickPlace   name="pick_place_action"/>

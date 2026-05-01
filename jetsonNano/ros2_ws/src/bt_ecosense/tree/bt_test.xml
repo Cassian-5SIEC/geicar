@@ -6,7 +6,7 @@
             <Fallback>
                 <CheckTargetInRange name="check_target_in_range"
                                     max_range="0.42"
-                                    min_range="0.30"/>
+                                    min_range="0.32"/>
                 <Sequence>
                     <SetGoalOffset target_frame="target_trash"
                                 standoff_distance="0.9"
