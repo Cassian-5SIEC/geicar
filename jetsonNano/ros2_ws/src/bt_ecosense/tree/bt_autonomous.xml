@@ -13,9 +13,26 @@
         </Inverter>
         <Fallback>
           <TrashLocalizationService service_name="/trash_localization_node/compute_pose_from_camera"/>
-          <ForceFailure>
-            <AlwaysFailure/>
-          </ForceFailure>
+          <AlwaysFailure/>
+          <!-- <Sequence>
+            <Script code="current_index := 0" />
+            <Script code="next_index := 0" />
+
+            <KeepRunningUntilFailure>
+                <Sequence>
+
+                    <SelectNearestWaypoint selected_index="{current_index}" />
+                    <GetWaypointAtIndex index_in="{current_index}" 
+                                index_out="{next_index}"
+                                goal_pose="{goal_pose}" />
+            
+                    <NavToGoal goal_pose="{goal_pose}"/>
+
+                    <Script code="current_index := next_index" />
+
+                </Sequence>
+            </KeepRunningUntilFailure>
+          </Sequence> -->
         </Fallback>
       </Parallel>
       <Parallel failure_count="1"
@@ -36,6 +53,13 @@
                              angle_offset_deg="2.0"
                              goal_pose="{estimated_goal_pose}"/>
               <NavToGoal goal_pose="{estimated_goal_pose}"/>
+              <Repeat num_cycles="2">
+                <SetVel name="backup"
+                        linear_x="-0.05"
+                        angular_z="0.0"
+                        topic_name="cmd_vel"/>
+              </Repeat>
+              <Sleep msec="1000"/>
             </Sequence>
           </ForceFailure>
         </Fallback>
@@ -49,7 +73,7 @@
                 <TrashLocalizationService service_name="/trash_localization_node/publish_target_tf"/>
                 <CheckTargetInRange name="check_target_in_range"
                                     max_range="0.42"
-                                    min_range="0.30"/>
+                                    min_range="0.32"/>
               </Sequence>
             </Inverter>
           </KeepRunningUntilFailure>
@@ -57,7 +81,7 @@
         <Fallback>
           <CheckTargetInRange name="check_target_in_range"
                               max_range="0.42"
-                              min_range="0.30"/>
+                              min_range="0.32"/>
           
           <Sequence>
             <SetGoalOffset target_frame="target_trash"
@@ -69,7 +93,7 @@
         </Fallback>
       </Parallel>
       <Fallback>
-        <RetryUntilSuccessful num_attempts="5">
+        <RetryUntilSuccessful num_attempts="3">
           <SubTree ID="arm_tree"
                   _autoremap="true"/>
         </RetryUntilSuccessful>

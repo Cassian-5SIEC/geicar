@@ -44,7 +44,7 @@ class CheckRecentRequest : public rclcpp::Node
     {
         auto now = this->get_clock()->now();
         recent_request_ = false;
-        if (last_msg_ != nullptr && (now - rclcpp::Time(last_msg_->header.stamp) < rclcpp::Duration(500ms))) {
+        if (last_msg_ != nullptr && (now - rclcpp::Time(last_msg_->header.stamp) < rclcpp::Duration(1000ms))) {
             recent_request_ = true;
             RCLCPP_INFO(this->get_logger(), "Recent request received: %s", last_msg_->command.c_str());
         }

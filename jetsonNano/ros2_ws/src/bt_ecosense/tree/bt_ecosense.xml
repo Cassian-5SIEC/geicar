@@ -4,6 +4,9 @@
     <BehaviorTree ID="main">
 		<SubTree ID="autonomous_tree"
 				 _autoremap="true"/>
+		<!-- <SubTree ID="teleop_tree"
+				 _autoremap="true"/> -->
+				 
 		<!-- <ReactiveSequence>
 			<CheckForModeMsg topic_name="/mode" current_mode="{current_mode}"/>
 

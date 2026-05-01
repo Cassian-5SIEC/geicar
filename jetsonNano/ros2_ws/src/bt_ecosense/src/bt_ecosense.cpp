@@ -45,6 +45,7 @@ class BehaviorTreeExecutor : public rclcpp::Node {
             factory_->registerNodeType<CheckForControlMsg>("CheckForControlMsg", node);
             factory_->registerNodeType<CheckForRecentRequest>("CheckForRecentRequest", node);
             factory_->registerNodeType<CheckForModeMsg>("CheckForModeMsg", node);
+            factory_->registerNodeType<CheckForStopMsg>("CheckForStopMsg", node);
             // Trash localization service
             factory_->registerNodeType<TrashLocalizationService>("TrashLocalizationService", node);
             factory_->registerNodeType<CheckTrashInCenter>("CheckTrashInCenter", node);
@@ -52,6 +53,9 @@ class BehaviorTreeExecutor : public rclcpp::Node {
             factory_->registerNodeType<ExecutePickPlace>("ExecutePickPlace", node);
             factory_->registerNodeType<CheckTargetInRange>("CheckTargetInRange", node);
             factory_->registerNodeType<RetractArm>("RetractArm", node);
+            // Petrol
+            factory_->registerNodeType<SelectNearestWaypoint>("SelectNearestWaypoint", node);
+            factory_->registerNodeType<GetWaypointAtIndex>("GetWaypointAtIndex", node);
             // Register Behavior Trees
             for (auto const& entry :
                 std::filesystem::directory_iterator(tree_folder_path_)) {
